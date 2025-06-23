@@ -72,6 +72,16 @@ def get_supported_languages(appid):
 reviews_json = fetch_reviews(appid, max_reviews=200)
 print(f"Fetched {len(reviews_json)} reviews")
 
+def get_all_reviews_stat(appid):
+    """
+    Get all reviews summary data
+    """
+    api = f"https://store.steampowered.com/appreviews/{appid}?json=1&language=all&filter=recent&review_type=all&num_per_page=100&cursor=*&day_range=null&purchase_type=all&filter_offtopic_activity=null"
+    response = requests.get(api)
+    data = response.json()
+    app_data = data.get('query_summary', {})
+    return app_data
+
 # Save the reviews to a JSON file to folder data/reviews
 os.makedirs("data/reviews", exist_ok=True)
 reviews_path = f"data/reviews/reviews_{appid}.json"
@@ -90,3 +100,6 @@ for country, reviews in country_reviews.items():
     supported_norms = [normalize(l) for l in supported_languages]
     mark = '✅' if country_norm in supported_norms else '❌'
     print(f"Language: {country} {mark}, Review Count: {len(reviews)}")
+
+review_stat = get_all_reviews_stat(appid)
+print(f"Total reviews stat: {review_stat}")

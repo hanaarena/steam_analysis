@@ -1,8 +1,9 @@
 # TODO list
 
-- [] Fetch reviews by country
-  - [] Filter out the positive rate of different countries
-  - [] Support show reviews list by country
+- [] Group by reviews by country/language
+  - [] Filter out the positive/negative rate of different countries/languages
+  - [] Support fetch all the reviews of a game
+  - [x] Detect whether the game supported the language
 - [] Count reviews by hours
 - [] Support export reviews to csv
 - [] Analyze the relation between reviews rate and sales

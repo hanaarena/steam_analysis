@@ -2,7 +2,7 @@
 
 - [] Group by reviews by country/language
   - [] Filter out the positive/negative rate of different countries/languages
-  - [] Support fetch all the reviews of a game
+  - [x] Support fetch all the reviews of a game (first newest 50 pages due to the limit of the API)
   - [x] Detect whether the game supported the language
     - [x] Add all languages mapping constants
 - [] Count reviews by hours

@@ -4,15 +4,18 @@ import json
 import os
 from collections import defaultdict
 import re
+import urllib
+
+import language_constants
 
 appid = 570
-language_map = {
-    "spanish": "spanish - spain",
-    "tchinese": "traditional chinese",
-    "schinese": "simplified chinese",
-    "latam": "spanish - latin america",
-    "brazilian": "portuguese - brazil"
+game_info = {
+    'supported_languages': [],
+    'info': {},
+    'reviews_summary': {}
 }
+all_reviews = []
+reviews_path = f"data/reviews/reviews_{appid}.json"
 
 def fetch_reviews(appid, max_reviews=100):
     """Fetch Steam reviews with appid """
@@ -62,7 +65,7 @@ def get_game_detail(appid):
     data = response.json()
     app_data = data.get(str(appid), {}).get('data', {})
     languages_str = app_data.get('supported_languages', '')
-    # clean up the string
+    # clean up the language string
     languages_str_clean = re.sub('<[^>]*>[^<]*<\\/[^>]*>', '', languages_str)
     languages_str_clean = re.sub('<.*?>', '', languages_str_clean)
     languages_str_clean = languages_str_clean.replace('languages with full audio support', '')
@@ -80,40 +83,62 @@ def get_game_detail(appid):
         }
     }
 
-reviews_json = fetch_reviews(appid, max_reviews=200)
-print(f"Fetched {len(reviews_json)} reviews")
+# reviews_json = fetch_reviews(appid, max_reviews=200)
+# print(f"Fetched {len(reviews_json)} reviews")
 
-def get_all_reviews_stat(appid):
+def get_all_reviews_stat(appid, cursor='*'):
     """
     Get all reviews summary data
     """
-    api = f"https://store.steampowered.com/appreviews/{appid}?json=1&language=all&filter=recent&review_type=all&num_per_page=100&cursor=*&day_range=null&purchase_type=all&filter_offtopic_activity=null"
+    print(f"Fetching reviews summary for appid {appid} with cursor {cursor}")
+    api = f"https://store.steampowered.com/appreviews/{appid}?json=1&language=all&filter=recent&review_type=all&num_per_page=100&cursor={cursor}&day_range=null&purchase_type=all&filter_offtopic_activity=null&l=english"
     response = requests.get(api)
     data = response.json()
-    app_data = data.get('query_summary', {})
-    return app_data
+    game_info['reviews_summary'] = data.get('query_summary', {})
+    return data.get('cursor', '*')
 
-# Save the reviews to a JSON file to folder data/reviews
+def fetch_all_reviews_stat(appid, cursor='*', max_pages=50):
+    """
+    Loop get_all_reviews_stat 50 times, using the cursor for pagination.
+    """
+    for _ in range(1, max_pages):
+        encode_cursor = urllib.parse.quote(cursor)
+        print(f"Fetching reviews summary for appid {appid} with cursor {encode_cursor}(page: {_+1}/{max_pages})")
+        api = f"https://store.steampowered.com/appreviews/{appid}?json=1&language=all&filter=recent&review_type=all&num_per_page=100&cursor={encode_cursor}&day_range=null&purchase_type=all&filter_offtopic_activity=null&l=english"
+        response = requests.get(api)
+        data = response.json()
+        reviews_data = data.get('reviews', {})
+        all_reviews.append(reviews_data)
+        new_cursor = data.get('cursor', None)
+        if not new_cursor or new_cursor == cursor:
+            print(f"No more reviews to fetch. Current cursor: {encode_cursor}, {data}")
+            break
+        cursor = new_cursor
+        time.sleep(2)
+    with open(reviews_path, "w") as f:
+        flat_reviews = [review for batch in all_reviews for review in batch]
+        json.dump(flat_reviews, f, indent=2)
+
+def get_all_reviews():
+    cursor = get_all_reviews_stat(appid)
+    fetch_all_reviews_stat(appid, cursor)
+
 os.makedirs("data/reviews", exist_ok=True)
-reviews_path = f"data/reviews/reviews_{appid}.json"
-with open(reviews_path, "w") as f:
-    json.dump(reviews_json, f, indent=2)
 
 game_detail = get_game_detail(appid)
-supported_languages = game_detail.get('languages', [])
-game_info = game_detail.get('info', [])
-print(f"Supported languages: {supported_languages}")
-print(f"Game infomation: {game_info}")
+game_info['supported_languages'] = game_detail.get('languages', [])
+game_info['info'] = game_detail.get('info', [])
+print(f"Supported languages: {game_info['supported_languages']}")
+print(f"Game infomation: {game_info['info']}")
 country_reviews = group_reviews_by_country(reviews_path)
 
 for country, reviews in country_reviews.items():
     def normalize(lang):
         return lang.replace('-', '').replace(' ', '').lower()
-    mapped_country = language_map.get(country, country)
+    mapped_country = language_constants.language_mapping.get(country, country)
     country_norm = normalize(mapped_country)
-    supported_norms = [normalize(l) for l in supported_languages]
+    supported_norms = [normalize(l) for l in game_info['supported_languages']]
     mark = '✅' if country_norm in supported_norms else '❌'
     print(f"Language: {country} {mark}, Review Count: {len(reviews)}")
 
-review_stat = get_all_reviews_stat(appid)
-print(f"Total reviews stat: {review_stat}")
+get_all_reviews()

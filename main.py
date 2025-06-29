@@ -53,7 +53,7 @@ def group_reviews_by_country(reviews_path):
         country_reviews[lang].append(review)
     return country_reviews
 
-def get_supported_languages(appid):
+def get_game_detail(appid):
     """
     Fetch supported languages list
     """
@@ -67,7 +67,18 @@ def get_supported_languages(appid):
     languages_str_clean = re.sub('<.*?>', '', languages_str_clean)
     languages_str_clean = languages_str_clean.replace('languages with full audio support', '')
     langs = [lang.strip() for lang in languages_str_clean.split(',') if lang.strip()]
-    return langs
+    return {
+        'languages': langs,
+        'info': {
+            'appid': app_data.get('steam_appid', ''),
+            'name': app_data.get('name', ''),
+            'developer': app_data.get('developers', []),
+            'publisher': app_data.get('publishers', []),
+            'release_date': app_data.get('release_date', {}).get('date', ''),
+            'header_image': app_data.get('header_image', ''),
+            'background': app_data.get('background', '')
+        }
+    }
 
 reviews_json = fetch_reviews(appid, max_reviews=200)
 print(f"Fetched {len(reviews_json)} reviews")
@@ -88,8 +99,11 @@ reviews_path = f"data/reviews/reviews_{appid}.json"
 with open(reviews_path, "w") as f:
     json.dump(reviews_json, f, indent=2)
 
-supported_languages = get_supported_languages(appid)
+game_detail = get_game_detail(appid)
+supported_languages = game_detail.get('languages', [])
+game_info = game_detail.get('info', [])
 print(f"Supported languages: {supported_languages}")
+print(f"Game infomation: {game_info}")
 country_reviews = group_reviews_by_country(reviews_path)
 
 for country, reviews in country_reviews.items():

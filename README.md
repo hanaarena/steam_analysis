@@ -1,3 +1,5 @@
+Steam game's reviews analyzer
+
 # Usage
 
 ## Setup

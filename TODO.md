@@ -4,7 +4,7 @@
   - [] Filter out the positive/negative rate of different countries/languages
   - [] Support fetch all the reviews of a game
   - [x] Detect whether the game supported the language
-    - [] Add all languages mapping constants
+    - [x] Add all languages mapping constants
 - [] Count reviews by hours
 - [] Support export reviews to csv
 - [] Analyze the relation between reviews rate and sales

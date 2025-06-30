@@ -17,7 +17,7 @@ language_mapping = {
   "koreana": "Korean",
   "norwegian": "Norwegian",
   "polish": "Polish",
-  "portuguese": "Portuguese",
+  "portuguese": "Portuguese - Portugal",
   "brazilian": "Portuguese - Brazil",
   "romanian": "Romanian",
   "russian": "Russian",

@@ -7,6 +7,8 @@ import re
 import urllib
 
 import language_constants
+import playtime_analysis
+import review_rate
 
 appid = 570
 game_info = {
@@ -142,3 +144,11 @@ for country, reviews in country_reviews.items():
     print(f"Language: {country} {mark}, Review Count: {len(reviews)}")
 
 get_all_reviews()
+
+buckets = playtime_analysis.group_reviews_by_playtime('data/reviews/reviews_570.json')
+for k, v in buckets.items():
+    print(f"{k}: {len(v)} reviews")
+
+rates = review_rate.rate_by_language('data/reviews/reviews_570.json')
+for lang, stat in rates.items():
+    print(f"{lang}: 👍+{stat['positive']} 👎 -{stat['negative']} (total {stat['total']}) | rate: {stat['positive_rate']:.2%}")

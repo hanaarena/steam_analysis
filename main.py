@@ -9,6 +9,7 @@ import urllib
 import language_constants
 import playtime_analysis
 import review_rate
+import export_utils
 
 appid = 570
 game_info = {
@@ -88,7 +89,7 @@ def get_game_detail(appid):
 # reviews_json = fetch_reviews(appid, max_reviews=200)
 # print(f"Fetched {len(reviews_json)} reviews")
 
-def get_all_reviews_stat(appid, cursor='*'):
+def get_first_reviews_stat(appid, cursor='*'):
     """
     Get all reviews summary data
     """
@@ -122,10 +123,11 @@ def fetch_all_reviews_stat(appid, cursor='*', max_pages=50):
         json.dump(flat_reviews, f, indent=2)
 
 def get_all_reviews():
-    cursor = get_all_reviews_stat(appid)
+    cursor = get_first_reviews_stat(appid)
     fetch_all_reviews_stat(appid, cursor)
 
 os.makedirs("data/reviews", exist_ok=True)
+os.makedirs("data/output", exist_ok=True)
 
 game_detail = get_game_detail(appid)
 game_info['supported_languages'] = game_detail.get('languages', [])
@@ -145,10 +147,13 @@ for country, reviews in country_reviews.items():
 
 get_all_reviews()
 
-buckets = playtime_analysis.group_reviews_by_playtime('data/reviews/reviews_570.json')
+buckets = playtime_analysis.group_reviews_by_playtime(reviews_path)
 for k, v in buckets.items():
     print(f"{k}: {len(v)} reviews")
 
-rates = review_rate.rate_by_language('data/reviews/reviews_570.json')
+rates = review_rate.rate_by_language(reviews_path)
 for lang, stat in rates.items():
     print(f"{lang}: 👍+{stat['positive']} 👎 -{stat['negative']} (total {stat['total']}) | rate: {stat['positive_rate']:.2%}")
+
+csv_path = f"data/output/reviews_{appid}.csv"
+export_utils.export_reviews_to_csv(reviews_path, csv_path)

@@ -1,17 +1,15 @@
 import "./App.css";
+import ReviewsChart from "./components/ReviewsChart";
 
 export default function App() {
   return (
-    <div className="w-11/12 flex justify-center my-0 mx-auto">
-      <div className="header w-full flex gap-4">
+    <div className="w-11/12 flex flex-col justify-center my-0 mx-auto">
+      <div className="header w-full flex gap-4 mb-6">
         <div className="cover flex-1">
-          <img
-            src="//shared.fastly.steamstatic.com/store_item_assets/steam/apps/570/header.jpg"
-            alt=""
-          />
+          <img src="//shared.fastly.steamstatic.com/store_item_assets/steam/apps/570/header.jpg" />
         </div>
         <div className="desp flex-1">
-          <p className="font-bold text-lg">Dota</p>
+          <p className="font-bold text-lg">Dota (867210)</p>
           <p className="text-sm mb-2">
             <span className="mr-4">Developer: Value</span>
             <span>Publisher: Value</span>
@@ -25,7 +23,9 @@ export default function App() {
           </p>
         </div>
       </div>
-      <div className="content"></div>
+      <div className="content">
+        <ReviewsChart />
+      </div>
     </div>
   );
 }

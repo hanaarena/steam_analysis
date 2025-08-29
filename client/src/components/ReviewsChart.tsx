@@ -2,10 +2,10 @@ import { Steam_Review_Data } from "@/utils/const";
 import { exportCsv } from "@/utils/fs";
 
 const COLORS: Record<RangeKey, string> = {
-  steamkey_positive: "bg-green-600",
-  purchased_positive: "bg-green-400",
-  steamkey_negative: "bg-red-900",
-  purchased_negative: "bg-red-600",
+  steamkey_positive: "bg-green-800",
+  purchased_positive: "bg-green-500",
+  steamkey_negative: "bg-red-800",
+  purchased_negative: "bg-red-400",
 };
 
 function sumValues(values: Record<RangeKey, number>) {
@@ -13,20 +13,21 @@ function sumValues(values: Record<RangeKey, number>) {
 }
 
 export default function ReviewsChart({
+  id,
   data = Steam_Review_Data,
 }: {
+  id: number | string;
   data?: RangeData[];
 }) {
   const maxTotal = Math.max(...data.map((d) => sumValues(d.values)));
 
   const downloadCsv = () => {
-    const csv = exportCsv(data);
+    const csv = exportCsv(["hours", ...Object.keys(COLORS)], data);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    // TODO: combine with game ID
-    a.download = "steam_{game_id}reviews_by_hours.csv";
+    a.download = `steam_${id}_reviews_by_hours.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -66,12 +67,12 @@ export default function ReviewsChart({
 
                     <div className="flex-1 bg-gray-300 rounded h-10 relative overflow-hidden">
                       <div className="absolute inset-y-0 left-0 flex">
-                        {Object.keys(COLORS).map((c) => (
+                        {Object.entries(COLORS).map(([key, color]) => (
                           <StackSegment
-                            key={`segment_${c}`}
-                            value={row.values[c as RangeKey]}
+                            key={`segment_${key}`}
+                            value={row.values[key as RangeKey]}
                             total={maxTotal}
-                            color={c}
+                            color={color}
                             showCount
                           />
                         ))}
@@ -89,7 +90,7 @@ export default function ReviewsChart({
             <div className="mt-4 flex items-center gap-4">
               <button
                 onClick={downloadCsv}
-                className="px-4 py-2 border rounded bg-white text-sm shadow-sm hover:bg-gray-50"
+                className="px-4 py-2 border rounded bg-white text-sm shadow-sm hover:bg-gray-50 cursor-pointer"
               >
                 Download CSV
                 <div className="text-xs text-gray-500">All Language</div>

@@ -1,11 +1,4 @@
-export function exportCsv(data: RangeData[]) {
-  const header = [
-    "range",
-    "steamkey_positive",
-    "purchased_positive",
-    "steamkey_negative",
-    "purchased_negative",
-  ];
+export function exportCsv(header: string[], data: RangeData[]) {
   const rows = data.map((d) => [
     d.label,
     d.values.steamkey_positive,

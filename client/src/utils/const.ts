@@ -1,7 +1,20 @@
+export const PlayHourLabels = {
+  Less10: "< 10 minutes",
+  Minute10To30: "10-30 minutes",
+  Minute30To60: "0.5-1 hour",
+  Hour1To2: "1-2 hours",
+  Hour2To5: "2-5 hours",
+  Hour5To10: "5-10 hours",
+  Hour10To20: "10-20 hours",
+  Hour20To50: "20-50 hours",
+  Hour50To100: "50-100 hours",
+  HourMore100: "100+ hours",
+}
+
 // Sample data
 export const Steam_Review_Data: RangeData[] = [
   {
-    label: "< 10 minutes",
+    label: PlayHourLabels.Less10,
     values: {
       steamkey_positive: 4,
       purchased_positive: 0,
@@ -10,7 +23,7 @@ export const Steam_Review_Data: RangeData[] = [
     },
   },
   {
-    label: "10-30 minutes",
+    label: PlayHourLabels.Minute10To30,
     values: {
       steamkey_positive: 26,
       purchased_positive: 84,
@@ -19,7 +32,7 @@ export const Steam_Review_Data: RangeData[] = [
     },
   },
   {
-    label: "0.5-1 hour",
+    label: PlayHourLabels.Minute30To60,
     values: {
       steamkey_positive: 227,
       purchased_positive: 126,
@@ -28,7 +41,7 @@ export const Steam_Review_Data: RangeData[] = [
     },
   },
   {
-    label: "1-2 hours",
+    label: PlayHourLabels.Hour1To2,
     values: {
       steamkey_positive: 457,
       purchased_positive: 140,
@@ -37,7 +50,7 @@ export const Steam_Review_Data: RangeData[] = [
     },
   },
   {
-    label: "2-5 hours",
+    label: PlayHourLabels.Hour2To5,
     values: {
       steamkey_positive: 80,
       purchased_positive: 185,
@@ -46,7 +59,7 @@ export const Steam_Review_Data: RangeData[] = [
     },
   },
   {
-    label: "5-10 hours",
+    label: PlayHourLabels.Hour5To10,
     values: {
       steamkey_positive: 138,
       purchased_positive: 149,
@@ -55,7 +68,7 @@ export const Steam_Review_Data: RangeData[] = [
     },
   },
   {
-    label: "10-20 hours",
+    label: PlayHourLabels.Hour10To20,
     values: {
       steamkey_positive: 177,
       purchased_positive: 130,
@@ -64,7 +77,7 @@ export const Steam_Review_Data: RangeData[] = [
     },
   },
   {
-    label: "20-50 hours",
+    label: PlayHourLabels.Hour20To50,
     values: {
       steamkey_positive: 356,
       purchased_positive: 185,
@@ -73,7 +86,7 @@ export const Steam_Review_Data: RangeData[] = [
     },
   },
   {
-    label: "50-100 hours",
+    label: PlayHourLabels.Hour50To100,
     values: {
       steamkey_positive: 245,
       purchased_positive: 154,
@@ -82,7 +95,7 @@ export const Steam_Review_Data: RangeData[] = [
     },
   },
   {
-    label: "100+ hours",
+    label: PlayHourLabels.HourMore100,
     values: {
       steamkey_positive: 323,
       purchased_positive: 140,

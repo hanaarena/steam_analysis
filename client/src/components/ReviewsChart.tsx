@@ -55,7 +55,7 @@ export default function ReviewsChart({
             ))}
           </div>
 
-          <div className="bg-gray-200 p-4 rounded">
+          <div className="bg-gray-50 p-4 rounded shadow">
             <h2 className="font-semibold mb-3">All Reviewers</h2>
             <div className="space-y-3">
               {data.map((row) => {

@@ -4,7 +4,7 @@ import ReviewsChart from "./components/ReviewsChart";
 import SaleStat from "./components/SaleStat";
 import EmptyTip from "./components/EmptyTip";
 import { get } from "@lanz/utils";
-import { Button, Divider } from "@mantine/core";
+import { Button } from "@mantine/core";
 
 const apiEndpoint = import.meta.env.VITE_STEAM;
 

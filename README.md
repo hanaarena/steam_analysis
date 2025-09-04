@@ -1,5 +1,7 @@
 Steam game's reviews analyzer
 
+![Index page](./prototype/main-index.png)
+
 # Usage
 
 ## Setup

@@ -20,6 +20,21 @@ modify the **appid** you want to fetch in `main.py`
 python main.py
 ```
 
-## Steam related resouces
+## Client
+
+Client part developed with React. located on `/client`
+
+### Local Development
+
+```bash
+cd ./client
+
+# start local dev server
+pnpm dev
+# or
+npm run dev
+```
+
+# Steam related resouces
 
 - [All supported languages constants](https://partner.steamgames.com/doc/store/localization)

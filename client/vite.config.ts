@@ -17,6 +17,11 @@ export default defineConfig({
         target: 'https://api.gamalytic.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+      '/steam': {
+        target: 'https://store.steampowered.com/api',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/steam/, ''),
       }
     }
   }

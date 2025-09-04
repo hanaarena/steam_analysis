@@ -2,15 +2,29 @@ import { useState } from "react";
 import "./App.css";
 import ReviewsChart from "./components/ReviewsChart";
 import SaleStat from "./components/SaleStat";
+import EmptyTip from "./components/EmptyTip";
+import { get } from "@lanz/utils";
+import { Button, Divider } from "@mantine/core";
 
-// temporary App ID
-const app_id = "867210";
+const apiEndpoint = import.meta.env.VITE_STEAM;
 
 export default function App() {
-  const [id, setId] = useState(app_id);
+  const [appId, setAppId] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [game, setGame] = useState<GameDetail>({} as unknown as GameDetail);
 
-  const handleSubmit = () => {
-    // TODO: fetch data by app ID
+  const handleSubmit = async () => {
+    if (!appId || isNaN(+appId)) return;
+
+    setLoading(true);
+    const res = await get<
+      Record<string, { data: GameDetail; success: boolean }>
+    >(`${apiEndpoint}/appdetails?appids=${appId}`);
+    console.log(res);
+    if (res[appId] && res[appId].success) {
+      setLoading(false);
+      setGame(res[appId].data);
+    }
   };
 
   return (
@@ -20,41 +34,62 @@ export default function App() {
         <input
           className="border indent-2 mr-2"
           type="text"
-          value={id}
+          value={appId}
           name="app_id"
-          onChange={(e) => setId(e.target.value)}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === appId) {
+              return;
+            }
+            setAppId(v);
+          }}
         />
-        <button
-          type="button"
+        <Button
+          size="xs"
+          variant="light"
+          loading={loading}
           onClick={handleSubmit}
-          className="py-1 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-gray-100 text-gray-900 hover:bg-gray-200 focus:outline-hidden focus:bg-gray-200 disabled:opacity-50 disabled:pointer-events-none dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:hover:text-white dark:focus:bg-white/20 dark:focus:text-white hover:cursor-pointer"
         >
           Submit
-        </button>
+        </Button>
       </div>
-      <div className="header w-full flex gap-4 mb-6">
-        <div className="cover flex-1">
-          <img src="//shared.fastly.steamstatic.com/store_item_assets/steam/apps/570/header.jpg" />
-        </div>
-        <div className="desp flex-1">
-          <p className="font-bold text-lg">Dota ({app_id})</p>
-          <p className="text-sm mb-2">
-            <span className="mr-4">Developer: Value</span>
-            <span>Publisher: Value</span>
-          </p>
-          <p className="max-h-[7.8em] multi-line-ellipsis">
-            Every day, millions of players worldwide enter battle as one of over
-            a hundred Dota heroes. And no matter if it's their 10th hour of play
-            or 1,000th, there's always something new to discover. With regular
-            updates that ensure a constant evolution of gameplay, features, and
-            heroes, Dota 2 has taken on a life of its own.
-          </p>
-        </div>
-      </div>
-      <div className="content">
-        <SaleStat id={id} />
-        <ReviewsChart id={id} />
-      </div>
+      {game.steam_appid ? (
+        <>
+          <div className="header w-full flex gap-4 mb-6">
+            <div className="cover w-1/3">
+              <img className="max-w-full h-auto" src={game.header_image} />
+            </div>
+            <div className="desp flex-1 w-1/3">
+              <p className="font-bold text-lg">
+                <a
+                  href={`https://store.steampowered.com/app/${appId}`}
+                  target="_blank"
+                >
+                  {game.name} ({appId})
+                </a>
+              </p>
+              <p className="text-sm mb-2">
+                <span className="mr-4">
+                  Developer: {game.developers.join(",")}
+                </span>
+                <span>Publisher: {game.publishers.join(",")}</span>
+              </p>
+              <p className="max-h-[7.8em] multi-line-ellipsis">
+                {game.about_the_game}
+              </p>
+            </div>
+          </div>
+          <div className="content">
+            <SaleStat id={appId} />
+            <ReviewsChart id={appId} />
+          </div>
+        </>
+      ) : (
+        <EmptyTip
+          title="No game selected"
+          message="Enter an App ID above and click Submit to load game data."
+        />
+      )}
     </div>
   );
 }

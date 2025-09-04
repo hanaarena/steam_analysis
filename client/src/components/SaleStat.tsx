@@ -43,7 +43,7 @@ export default function SaleStat(id: { id: number | string }) {
           <span className="font-bold">Review Score:</span> {stat.reviewScore}%
         </p>
         <p className="text-sm font-medium text-gray-700">
-          <span className="font-bold">Genres:</span> {stat.genres.join(", ")}
+          <span className="font-bold">Genres:</span> {stat.genres?.join(", ")}
         </p>
         <p className="text-sm font-medium text-gray-700">
           <span className="font-bold">Copies sold:</span>{" "}

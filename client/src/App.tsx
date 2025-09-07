@@ -5,6 +5,7 @@ import SaleStat from "./components/SaleStat";
 import EmptyTip from "./components/EmptyTip";
 import { get } from "@lanz/utils";
 import { Button } from "@mantine/core";
+import UpdateNews from "./components/UpdatePatch";
 
 const apiEndpoint = import.meta.env.VITE_STEAM;
 
@@ -30,28 +31,37 @@ export default function App() {
   return (
     <div className="w-11/12 flex flex-col justify-center my-0 mx-auto">
       <div className="my-2 mb-4">
-        App ID: &nbsp;
-        <input
-          className="border indent-2 mr-2"
-          type="text"
-          value={appId}
-          name="app_id"
-          onChange={(e) => {
-            const v = e.target.value;
-            if (v === appId) {
-              return;
-            }
-            setAppId(v);
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
           }}
-        />
-        <Button
-          size="xs"
-          variant="light"
-          loading={loading}
-          onClick={handleSubmit}
+          className="flex items-center"
         >
-          Submit
-        </Button>
+          App ID: &nbsp;
+          <input
+            className="border indent-2 mr-2"
+            type="text"
+            value={appId}
+            name="app_id"
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === appId) {
+                return;
+              }
+              setAppId(v);
+            }}
+          />
+          <Button
+            type="submit"
+            size="xs"
+            variant="light"
+            loading={loading}
+            onClick={handleSubmit}
+          >
+            Submit
+          </Button>
+        </form>
       </div>
       {game.steam_appid ? (
         <>
@@ -64,6 +74,7 @@ export default function App() {
                 <a
                   href={`https://store.steampowered.com/app/${appId}`}
                   target="_blank"
+                  className="hover:text-blue-400"
                 >
                   {game.name} ({appId})
                 </a>
@@ -74,13 +85,15 @@ export default function App() {
                 </span>
                 <span>Publisher: {game.publishers.join(",")}</span>
               </p>
-              <p className="max-h-[7.8em] multi-line-ellipsis">
-                {game.about_the_game}
-              </p>
+              <p
+                className="max-h-[7.8em] multi-line-ellipsis"
+                dangerouslySetInnerHTML={{ __html: game.about_the_game }}
+              />
             </div>
           </div>
           <div className="content">
             <SaleStat id={appId} />
+            <UpdateNews id={appId} />
             <ReviewsChart id={appId} />
           </div>
         </>

@@ -13,16 +13,16 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': {
-        target: 'https://api.gamalytic.com',
+      "/api": {
+        target: "https://api.gamalytic.com",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(/^\/api/, ""),
       },
-      '/steam': {
-        target: 'https://store.steampowered.com/api',
+      "/steam": {
+        target: "https://store.steampowered.com/api",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/steam/, ''),
+        rewrite: (path) => path.replace(/^\/steam/, ""),
       }
-    }
-  }
+    },
+  },
 });

@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { get } from "@lanz/utils";
+import { groupByYears } from "@/utils/times";
+import { Gradients } from "@/utils/const";
+import { Button } from "@mantine/core";
 
 type UpdateItem = {
   gid: string;
@@ -16,45 +19,39 @@ type UpdateItem = {
 const apiEndpoint = import.meta.env.VITE_STEAM_API;
 
 export default function UpdateNews({ id }: { id: number | string }) {
-  const [list, setList] = useState<UpdateItem[]>([]);
+  const [list, setList] = useState<Map<string, UpdateItem[]>>();
   const [count, setCount] = useState(0);
+  const [filter, setFilter] = useState("");
 
-  const gradients = [
-    "from-indigo-500 to-blue-400",
-    "from-pink-500 to-orange-400",
-    "from-green-400 to-teal-500",
-    "from-purple-500 to-pink-400",
-    "from-yellow-400 to-orange-300",
-    "from-sky-500 to-indigo-400",
-  ];
+  const handleUpdateFilter = (year: string) => {
+    setFilter(year);
+  };
 
   useEffect(() => {
     const getUpdateNews = async () => {
       const target = encodeURIComponent(
-        `https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${id}&count=10&format=json&maxlength=300&feeds=steam_community_announcements`
+        `https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/?appid=${id}&count=20&format=json&maxlength=300&feeds=steam_community_announcements`
       );
       const res = await get<{
-        appnews: { newsitems: UpdateItem[] };
-        count: number;
+        appnews: { newsitems: UpdateItem[]; count: number };
       }>(`${apiEndpoint}/proxy?url=${target}`);
-      console.warn("kekek res", res);
 
       if (res.appnews?.newsitems?.length) {
         // sort newest -> oldest
         const sorted = res.appnews.newsitems.sort((a, b) => b.date - a.date);
-        setList(sorted);
+        const grouped = groupByYears(sorted, "date");
+        setList(grouped);
+        const pickFirstYear = Array.from(grouped.keys())[0];
+        setFilter(pickFirstYear);
       }
-      if (!isNaN(res.count)) {
-        setCount(res.count);
+
+      if (!isNaN(res.appnews.count)) {
+        setCount(res.appnews.count);
       }
     };
 
     getUpdateNews();
   }, [id]);
-
-  if (!list.length) {
-    return "";
-  }
 
   return (
     <div className="max-w-4xl mb-4">
@@ -63,57 +60,75 @@ export default function UpdateNews({ id }: { id: number | string }) {
         <p className="text-xs">Total news: {count}</p>
       </header>
 
-      <div className="flex gap-2 flex-wrap items-center">
-        {list.map((it, idx) => {
-          const g = gradients[idx % gradients.length];
-          return (
-            <div
-              key={it.gid}
-              className="group relative"
-              tabIndex={0}
-              aria-label={it.title}
+      <div className="flex gap-2 flex-col">
+        <div>
+          Years: &nbsp;
+          {(list ? Array.from(list?.keys()) : []).map((year) => (
+            <Button
+              key={year}
+              variant={year === filter ? "filled" : "outline"}
+              size="xs"
+              radius="xl"
+              color="rgba(115, 201, 255, 1)"
+              onClick={() => handleUpdateFilter(year)}
+              className="mr-2"
             >
-              <div
-                className={`min-w-[180px] max-w-xs p-3 bg-gradient-to-br ${g} rounded-sm shadow cursor-pointer flex flex-col text-sm text-white`}
-              >
-                <div className="font-medium truncate">{it.title}</div>
-                <div className="text-xs opacity-90 mt-1">
-                  {new Date(it.date * 1000).toLocaleDateString()}
-                </div>
-              </div>
+              {year}
+            </Button>
+          ))}
+        </div>
+        <div className="grid grid-rows-2  grid-flow-col auto-cols-max overflow-x-auto overflow-y-hidden gap-2 whitespace-nowrap border border-gray-100">
+          {filter &&
+            list?.get(filter)?.map((item, idx) => {
+              const g = Gradients[idx % Gradients.length];
+              return (
+                <div
+                  key={item.gid}
+                  className="group relative"
+                  tabIndex={0}
+                  aria-label={item.title}
+                >
+                  <div
+                    className={`min-w-[180px] max-w-xs p-3 bg-gradient-to-br ${g} rounded-sm shadow cursor-pointer flex flex-col text-sm text-white`}
+                  >
+                    <div className="font-medium truncate">{item.title}</div>
+                    <div className="text-xs opacity-90 mt-1">
+                      {new Date(item.date * 1000).toLocaleDateString()}
+                    </div>
+                  </div>
 
-              {/* popup card shown on hover or focus */}
-              <div className="opacity-0 invisible group-hover:visible group-hover:opacity-100 group-focus:visible group-focus:opacity-100 transition-all duration-150 absolute z-50 left-0 mt-2 w-96 bg-white border rounded p-3 shadow-lg pointer-events-auto">
-                <div className="flex items-baseline justify-between gap-2">
-                  <h3 className="font-semibold text-gray-800 text-sm">
-                    {it.title}
-                  </h3>
-                  <time className="text-xs text-gray-500">
-                    {new Date(it.date * 1000).toLocaleString()}
-                  </time>
+                  {/* popup card shown on hover or focus */}
+                  <div className="opacity-0 invisible group-hover:visible group-hover:opacity-100 group-focus:visible group-focus:opacity-100 transition-all duration-150 absolute z-50 left-0 mt-2 w-96 bg-white border rounded p-3 shadow-lg pointer-events-auto">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <h3 className="font-semibold text-gray-800 text-sm">
+                        {item.title}
+                      </h3>
+                      <time className="text-xs text-gray-500">
+                        {new Date(item.date * 1000).toLocaleString()}
+                      </time>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-2 line-clamp-4">
+                      {item.contents}
+                    </p>
+                    <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
+                      {item.author ? <span>By {item.author}</span> : null}
+                      {item.feedlabel ? <span>· {item.feedlabel}</span> : null}
+                      {item.url ? (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          className="text-blue-600 underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Detail
+                        </a>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-2 line-clamp-4">
-                  {it.contents}
-                </p>
-                <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
-                  {it.author ? <span>By {it.author}</span> : null}
-                  {it.feedlabel ? <span>· {it.feedlabel}</span> : null}
-                  {it.url ? (
-                    <a
-                      href={it.url}
-                      target="_blank"
-                      className="text-blue-600 underline"
-                      rel="noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      Read
-                    </a>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+        </div>
       </div>
     </div>
   );

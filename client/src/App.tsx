@@ -5,7 +5,7 @@ import SaleStat from "./components/SaleStat";
 import EmptyTip from "./components/EmptyTip";
 import { get } from "@lanz/utils";
 import { Button } from "@mantine/core";
-import UpdateNews from "./components/UpdatePatch";
+import UpdateNews from "./components/UpdateNews";
 
 const apiEndpoint = import.meta.env.VITE_STEAM;
 

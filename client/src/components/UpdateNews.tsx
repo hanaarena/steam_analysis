@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { get } from "@lanz/utils";
 import { groupByYears } from "@/utils/times";
 import { Gradients } from "@/utils/const";
-import { Button } from "@mantine/core";
+import { Button, Group, HoverCard } from "@mantine/core";
 
 type UpdateItem = {
   gid: string;
@@ -54,9 +54,9 @@ export default function UpdateNews({ id }: { id: number | string }) {
   }, [id]);
 
   return (
-    <div className="max-w-4xl mb-4">
+    <div className="mb-4">
       <header className="mb-4">
-        <h2 className="text-xl font-bold">Updates News</h2>
+        <h1 className="text-2xl font-extrabold">Updates News</h1>
         <p className="text-xs">Total news: {count}</p>
       </header>
 
@@ -77,55 +77,56 @@ export default function UpdateNews({ id }: { id: number | string }) {
             </Button>
           ))}
         </div>
-        <div className="grid grid-rows-2  grid-flow-col auto-cols-max overflow-x-auto overflow-y-hidden gap-2 whitespace-nowrap border border-gray-100">
+        <div className="grid grid-rows-2 grid-flow-col auto-cols-max overflow-x-auto gap-2 whitespace-nowrap border border-gray-100">
           {filter &&
             list?.get(filter)?.map((item, idx) => {
               const g = Gradients[idx % Gradients.length];
               return (
-                <div
-                  key={item.gid}
-                  className="group relative"
-                  tabIndex={0}
-                  aria-label={item.title}
-                >
-                  <div
-                    className={`min-w-[180px] max-w-xs p-3 bg-gradient-to-br ${g} rounded-sm shadow cursor-pointer flex flex-col text-sm text-white`}
-                  >
-                    <div className="font-medium truncate">{item.title}</div>
-                    <div className="text-xs opacity-90 mt-1">
-                      {new Date(item.date * 1000).toLocaleDateString()}
-                    </div>
-                  </div>
-
-                  {/* popup card shown on hover or focus */}
-                  <div className="opacity-0 invisible group-hover:visible group-hover:opacity-100 group-focus:visible group-focus:opacity-100 transition-all duration-150 absolute z-50 left-0 mt-2 w-96 bg-white border rounded p-3 shadow-lg pointer-events-auto">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <h3 className="font-semibold text-gray-800 text-sm">
-                        {item.title}
-                      </h3>
-                      <time className="text-xs text-gray-500">
-                        {new Date(item.date * 1000).toLocaleString()}
-                      </time>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-2 line-clamp-4">
-                      {item.contents}
-                    </p>
-                    <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
-                      {item.author ? <span>By {item.author}</span> : null}
-                      {item.feedlabel ? <span>· {item.feedlabel}</span> : null}
-                      {item.url ? (
+                <Group justify="center" key={item.gid}>
+                  <HoverCard width={280} shadow="md">
+                    <HoverCard.Target>
+                      <div
+                        className={`min-w-[180px] max-w-xs p-3 bg-gradient-to-br ${g} rounded-sm shadow cursor-pointer flex flex-col text-sm text-white`}
+                      >
                         <a
-                          href={item.url}
+                          className="font-medium truncate"
                           target="_blank"
-                          className="text-blue-600 underline"
-                          onClick={(e) => e.stopPropagation()}
+                          href={item.url}
                         >
-                          Detail
+                          {item.title}
                         </a>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
+                        <div className="text-xs opacity-90 mt-1">
+                          {new Date(item.date * 1000).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </HoverCard.Target>
+                    <HoverCard.Dropdown>
+                      <div className="flex items-baseline justify-between gap-2">
+                        <h3 className="font-semibold text-gray-800 text-sm">
+                          {item.title}
+                        </h3>
+                        <time className="text-xs text-gray-500">
+                          {new Date(item.date * 1000).toLocaleString()}
+                        </time>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-2 line-clamp-4">
+                        {item.contents}
+                      </p>
+                      <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
+                        {item.url ? (
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            className="text-blue-600 underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Detail
+                          </a>
+                        ) : null}
+                      </div>
+                    </HoverCard.Dropdown>
+                  </HoverCard>
+                </Group>
               );
             })}
         </div>

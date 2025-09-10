@@ -104,3 +104,12 @@ export const Steam_Review_Data: RangeData[] = [
     },
   },
 ];
+
+export const Gradients = [
+    "from-indigo-500 to-blue-400",
+    "from-pink-500 to-orange-400",
+    "from-green-400 to-teal-500",
+    "from-purple-500 to-pink-400",
+    "from-yellow-400 to-orange-300",
+    "from-sky-500 to-indigo-400",
+  ];

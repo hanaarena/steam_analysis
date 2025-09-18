@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { get } from "@lanz/utils";
 import { groupByYears } from "@/utils/times";
 import { Gradients } from "@/utils/const";
-import { Button, Group, HoverCard, Pagination, Text } from "@mantine/core";
+import { Button, Group, HoverCard } from "@mantine/core";
+import { useIntersectionObserver } from "@/hooks/useObserve";
 
 type UpdateItem = {
   gid: string;
@@ -19,62 +20,68 @@ type UpdateItem = {
 const apiEndpoint = import.meta.env.VITE_STEAM_API;
 const PageSize = 20;
 const now = Math.floor(Date.now() / 1000);
+const AllFilter = "All";
 
 export default function UpdateNews({ id }: { id: number | string }) {
   const [list, setList] = useState<Map<string, UpdateItem[]>>();
   const [count, setCount] = useState(0);
-  const [filter, setFilter] = useState("");
+  const [filter, setFilter] = useState(AllFilter);
   const [enddate, setEnddate] = useState(now);
-  const [page, setPage] = useState(1);
-  const tempList = useRef<UpdateItem[]>([]);
+  const allList = useRef<UpdateItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const handleUpdateFilter = (year: string) => {
     setFilter(year);
   };
 
-  const handlePageChange = (p: number) => {
-    let _enddate = now;
-    if (p > page) {
-      _enddate = (tempList.current.pop()?.date || now) - 1;
-    } else if (p < page) {
-      _enddate = (tempList.current.shift()?.date || now) + 1;
+  // const handlePageChange = (p: number) => {
+  //   let _enddate = now;
+  //   if (p > page) {
+  //     _enddate = (allList.current.pop()?.date || now) - 1;
+  //   } else if (p < page) {
+  //     _enddate = (allList.current.shift()?.date || now) + 1;
+  //   }
+  //   setPage(p);
+  //   setEnddate(_enddate);
+  // };
+
+  const getUpdateNews = useCallback(async () => {
+    setLoading(true);
+    const target = encodeURIComponent(
+      `https://api.steampowered.com/ISteamNews/GetNewsForApp/v2?appid=${id}&count=${PageSize}&format=json&maxlength=300&feeds=steam_community_announcements&enddate=${enddate}`
+    );
+    const res = await get<{
+      appnews: { newsitems: UpdateItem[]; count: number };
+    }>(`${apiEndpoint}/proxy?url=${target}`);
+
+    if (res.appnews?.newsitems?.length) {
+      // sort newest -> oldest
+      const sorted = res.appnews.newsitems.sort((a, b) => b.date - a.date);
+      // Update "All" filter tag
+      allList.current = [...allList.current, ...sorted];
+      const all = new Map<string, UpdateItem[]>([[AllFilter, allList.current]]);
+      const grouped = groupByYears(sorted, "date");
+      setList(new Map([...all, ...grouped]));
     }
-    setPage(p);
-    setEnddate(_enddate);
-  };
 
-  useEffect(() => {
-    const getUpdateNews = async () => {
-      const target = encodeURIComponent(
-        `https://api.steampowered.com/ISteamNews/GetNewsForApp/v2?appid=${id}&count=${PageSize}&format=json&maxlength=300&feeds=steam_community_announcements&enddate=${enddate}`
-      );
-      const res = await get<{
-        appnews: { newsitems: UpdateItem[]; count: number };
-      }>(`${apiEndpoint}/proxy?url=${target}`);
-
-      if (res.appnews?.newsitems?.length) {
-        // sort newest -> oldest
-        const sorted = res.appnews.newsitems.sort((a, b) => b.date - a.date);
-        tempList.current = sorted;
-        const grouped = groupByYears(sorted, "date");
-        setList(grouped);
-        const pickFirstYear = Array.from(grouped.keys())[0];
-        setFilter(pickFirstYear);
-      }
-
-      if (!isNaN(res.appnews.count)) {
-        setCount(res.appnews.count);
-      }
-    };
-
-    getUpdateNews();
+    if (!isNaN(res.appnews.count)) {
+      setCount(res.appnews.count);
+    }
+    setLoading(false);
   }, [id, enddate]);
+
+  const loaderRef = useIntersectionObserver<HTMLDivElement>(
+    getUpdateNews,
+    loading
+  );
 
   return (
     <div className="mb-4">
       <header className="mb-4">
-        <h1 className="text-2xl font-extrabold">Updates News</h1>
-        <p className="text-xs">Total news: {count}</p>
+        <h1 className="text-2xl font-extrabold">
+          Updates News{" "}
+          <span className="text-xs font-normal">(Total news: {count})</span>
+        </h1>
       </header>
       <div className="flex gap-2 flex-col mb-3">
         <div>
@@ -93,8 +100,9 @@ export default function UpdateNews({ id }: { id: number | string }) {
             </Button>
           ))}
         </div>
-        <div className="grid grid-rows-2 grid-flow-col auto-fill-200 overflow-x-auto gap-2 border border-gray-100">
+        <div className="flex flex-wrap content-start h-48 overflow-y-auto gap-2 border border-gray-100">
           {filter &&
+            list?.get(filter) &&
             list?.get(filter)?.map((item, idx) => {
               const g = Gradients[idx % Gradients.length];
               return (
@@ -145,19 +153,10 @@ export default function UpdateNews({ id }: { id: number | string }) {
                 </Group>
               );
             })}
+          <div ref={loaderRef}>
+            {loading ? "Loading..." : "Scroll to load more"}
+          </div>
         </div>
-      </div>
-      <div className="flex">
-        <Text className="mr-2!">
-          Showing {page} of {Math.ceil(count / PageSize)}
-        </Text>
-        <Pagination
-          total={Math.ceil(count / PageSize)}
-          size="sm"
-          radius="lg"
-          onChange={handlePageChange}
-          withPages={false}
-        />
       </div>
     </div>
   );

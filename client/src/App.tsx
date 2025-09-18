@@ -70,11 +70,11 @@ export default function App() {
               <img className="max-w-full h-auto" src={game.header_image} />
             </div>
             <div className="desp flex-1 w-1/3">
-              <p className="font-bold text-lg">
+              <p className="font-bold text-lg text-blue-400">
                 <a
                   href={`https://store.steampowered.com/app/${appId}`}
                   target="_blank"
-                  className="hover:text-blue-400"
+                  className="underline"
                 >
                   {game.name} ({appId})
                 </a>

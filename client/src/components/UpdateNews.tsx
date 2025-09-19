@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { get } from "@lanz/utils";
 import { groupByYears } from "@/utils/times";
 import { Gradients } from "@/utils/const";
@@ -19,69 +19,78 @@ type UpdateItem = {
 
 const apiEndpoint = import.meta.env.VITE_STEAM_API;
 const PageSize = 20;
-const now = Math.floor(Date.now() / 1000);
+const now = () => Math.floor(Date.now() / 1000);
 const AllFilter = "All";
 
 export default function UpdateNews({ id }: { id: number | string }) {
-  const [list, setList] = useState<Map<string, UpdateItem[]>>();
-  const [count, setCount] = useState(0);
+  const [list, setList] = useState<Map<string, UpdateItem[]>>(new Map());
   const [filter, setFilter] = useState(AllFilter);
-  const [enddate, setEnddate] = useState(now);
-  const allList = useRef<UpdateItem[]>([]);
+  const [enddate, setEnddate] = useState(now()); // enddate === -1 is the last content
   const [loading, setLoading] = useState(false);
+  const firstRender = useRef(true);
 
   const handleUpdateFilter = (year: string) => {
     setFilter(year);
   };
 
-  // const handlePageChange = (p: number) => {
-  //   let _enddate = now;
-  //   if (p > page) {
-  //     _enddate = (allList.current.pop()?.date || now) - 1;
-  //   } else if (p < page) {
-  //     _enddate = (allList.current.shift()?.date || now) + 1;
-  //   }
-  //   setPage(p);
-  //   setEnddate(_enddate);
-  // };
+  const handleEnddateChange = () => {
+    const _list = list.get(AllFilter) || [];
+    const _enddate = _list[_list.length - 1]?.date - 1;
+    setEnddate(_enddate);
+  };
 
-  const getUpdateNews = useCallback(async () => {
-    setLoading(true);
-    const target = encodeURIComponent(
-      `https://api.steampowered.com/ISteamNews/GetNewsForApp/v2?appid=${id}&count=${PageSize}&format=json&maxlength=300&feeds=steam_community_announcements&enddate=${enddate}`
-    );
-    const res = await get<{
-      appnews: { newsitems: UpdateItem[]; count: number };
-    }>(`${apiEndpoint}/proxy?url=${target}`);
-
-    if (res.appnews?.newsitems?.length) {
-      // sort newest -> oldest
-      const sorted = res.appnews.newsitems.sort((a, b) => b.date - a.date);
-      // Update "All" filter tag
-      allList.current = [...allList.current, ...sorted];
-      const all = new Map<string, UpdateItem[]>([[AllFilter, allList.current]]);
-      const grouped = groupByYears(sorted, "date");
-      setList(new Map([...all, ...grouped]));
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
     }
 
-    if (!isNaN(res.appnews.count)) {
-      setCount(res.appnews.count);
-    }
-    setLoading(false);
+    const getUpdateNews = async () => {
+      if (enddate === -1) return;
+      setLoading(true);
+      console.warn("kekek enddate", enddate);
+      const target = encodeURIComponent(
+        `https://api.steampowered.com/ISteamNews/GetNewsForApp/v2?appid=${id}&count=${PageSize}&format=json&maxlength=300&feeds=steam_community_announcements&enddate=${enddate}`
+      );
+      const res = await get<{
+        appnews: { newsitems: UpdateItem[]; count: number };
+      }>(`${apiEndpoint}/proxy?url=${target}`);
+
+      if (res.appnews?.newsitems?.length) {
+        // sort newest -> oldest
+        const sorted = res.appnews.newsitems.sort((a, b) => b.date - a.date);
+        // update "All" filter tag & append to {list}
+        const allList2 = list.set(AllFilter, [
+          ...(list.get(AllFilter) || []),
+          ...sorted,
+        ]);
+        const grouped = groupByYears(sorted, "date");
+        setList(new Map([...allList2, ...grouped]));
+      } else {
+        // all data already fetched
+        setEnddate(-1);
+      }
+
+      setLoading(false);
+    };
+    getUpdateNews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, enddate]);
 
+  useEffect(() => {
+    // when app ID input value changed
+    setEnddate(now());
+  }, [id]);
+
   const loaderRef = useIntersectionObserver<HTMLDivElement>(
-    getUpdateNews,
+    handleEnddateChange,
     loading
   );
 
   return (
     <div className="mb-4">
       <header className="mb-4">
-        <h1 className="text-2xl font-extrabold">
-          Updates News{" "}
-          <span className="text-xs font-normal">(Total news: {count})</span>
-        </h1>
+        <h1 className="text-2xl font-extrabold">Updates News</h1>
       </header>
       <div className="flex gap-2 flex-col mb-3">
         <div>
@@ -100,13 +109,13 @@ export default function UpdateNews({ id }: { id: number | string }) {
             </Button>
           ))}
         </div>
-        <div className="flex flex-wrap content-start h-48 overflow-y-auto gap-2 border border-gray-100">
+        <div className="flex flex-wrap content-start h-48 overflow-y-auto gap-2 border border-gray-100 pb-6">
           {filter &&
             list?.get(filter) &&
             list?.get(filter)?.map((item, idx) => {
               const g = Gradients[idx % Gradients.length];
               return (
-                <Group key={item.gid} className="grid">
+                <Group key={`${filter}_${item.gid}`} className="grid">
                   <HoverCard width={280} shadow="md">
                     <HoverCard.Target>
                       <div
@@ -153,9 +162,11 @@ export default function UpdateNews({ id }: { id: number | string }) {
                 </Group>
               );
             })}
-          <div ref={loaderRef}>
-            {loading ? "Loading..." : "Scroll to load more"}
-          </div>
+          {enddate > -1 && filter === AllFilter && (
+            <div ref={loaderRef}>
+              {loading ? "Loading..." : "Scroll to load more"}
+            </div>
+          )}
         </div>
       </div>
     </div>

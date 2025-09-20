@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import "./App.css";
 import ReviewsChart from "./components/ReviewsChart";
 import SaleStat from "./components/SaleStat";
@@ -13,18 +13,21 @@ export default function App() {
   const [appId, setAppId] = useState("");
   const [loading, setLoading] = useState(false);
   const [game, setGame] = useState<GameDetail>({} as unknown as GameDetail);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async () => {
-    if (!appId || isNaN(+appId)) return;
+    const inputId = inputRef.current?.value;
+    if (!inputId || isNaN(+inputId)) return;
 
     setLoading(true);
+    // already modify app_id will trasfer to children components
+    setAppId(inputId);
     const res = await get<
       Record<string, { data: GameDetail; success: boolean }>
-    >(`${apiEndpoint}/appdetails?appids=${appId}`);
-    console.log(res);
-    if (res[appId] && res[appId].success) {
+    >(`${apiEndpoint}/appdetails?appids=${inputId}`);
+    if (res[inputId] && res[inputId].success) {
       setLoading(false);
-      setGame(res[appId].data);
+      setGame(res[inputId].data);
     }
   };
 
@@ -34,23 +37,15 @@ export default function App() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            handleSubmit();
           }}
           className="flex items-center"
         >
           App ID: &nbsp;
           <input
+            ref={inputRef}
             className="border indent-2 mr-2"
             type="text"
-            value={appId}
-            name="app_id"
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v === appId) {
-                return;
-              }
-              setAppId(v);
-            }}
+            name="input_id"
           />
           <Button
             type="submit"

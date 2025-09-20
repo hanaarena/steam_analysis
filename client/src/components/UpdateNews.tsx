@@ -48,7 +48,6 @@ export default function UpdateNews({ id }: { id: number | string }) {
     const getUpdateNews = async () => {
       if (enddate === -1) return;
       setLoading(true);
-      console.warn("kekek enddate", enddate);
       const target = encodeURIComponent(
         `https://api.steampowered.com/ISteamNews/GetNewsForApp/v2?appid=${id}&count=${PageSize}&format=json&maxlength=300&feeds=steam_community_announcements&enddate=${enddate}`
       );
@@ -109,62 +108,67 @@ export default function UpdateNews({ id }: { id: number | string }) {
             </Button>
           ))}
         </div>
-        <div className="flex flex-wrap content-start h-48 overflow-y-auto gap-2 border border-gray-100 pb-6">
-          {filter &&
-            list?.get(filter) &&
-            list?.get(filter)?.map((item, idx) => {
-              const g = Gradients[idx % Gradients.length];
-              return (
-                <Group key={`${filter}_${item.gid}`} className="grid">
-                  <HoverCard width={280} shadow="md">
-                    <HoverCard.Target>
-                      <div
-                        className={`w-[200px] p-3 bg-gradient-to-br ${g} rounded-sm shadow cursor-pointer flex flex-col text-sm text-white`}
-                      >
-                        <a
-                          className="font-medium truncate"
-                          target="_blank"
-                          href={item.url}
+        <div className="border border-gray-100 h-48 overflow-y-auto pb-4 pl-2 pt-2">
+          <div className="flex flex-wrap content-start gap-2">
+            {filter &&
+              list?.get(filter) &&
+              list?.get(filter)?.map((item, idx) => {
+                const g = Gradients[idx % Gradients.length];
+                return (
+                  <Group key={`${filter}_${item.gid}`} className="grid">
+                    <HoverCard width={280} shadow="md">
+                      <HoverCard.Target>
+                        <div
+                          className={`w-[200px] p-3 bg-gradient-to-br ${g} rounded-sm shadow cursor-pointer flex flex-col text-sm text-white`}
                         >
-                          {item.title}
-                        </a>
-                        <div className="text-xs opacity-90 mt-1">
-                          {new Date(item.date * 1000).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </HoverCard.Target>
-                    <HoverCard.Dropdown>
-                      <div className="flex items-baseline justify-between gap-2">
-                        <h3 className="font-semibold text-gray-800 text-sm">
-                          {item.title}
-                        </h3>
-                        <time className="text-xs text-gray-500">
-                          {new Date(item.date * 1000).toLocaleString()}
-                        </time>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-2 line-clamp-4">
-                        {item.contents}
-                      </p>
-                      <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
-                        {item.url ? (
                           <a
-                            href={item.url}
+                            className="font-medium truncate"
                             target="_blank"
-                            className="text-blue-600 underline"
-                            onClick={(e) => e.stopPropagation()}
+                            href={item.url}
                           >
-                            Detail
+                            {item.title}
                           </a>
-                        ) : null}
-                      </div>
-                    </HoverCard.Dropdown>
-                  </HoverCard>
-                </Group>
-              );
-            })}
+                          <div className="text-xs opacity-90 mt-1">
+                            {new Date(item.date * 1000).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </HoverCard.Target>
+                      <HoverCard.Dropdown>
+                        <div className="flex items-baseline justify-between gap-2">
+                          <h3 className="font-semibold text-gray-800 text-sm">
+                            {item.title}
+                          </h3>
+                          <time className="text-xs text-gray-500">
+                            {new Date(item.date * 1000).toLocaleString()}
+                          </time>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-2 line-clamp-4">
+                          {item.contents}
+                        </p>
+                        <div className="mt-2 flex items-center gap-3 text-xs text-gray-500">
+                          {item.url ? (
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              className="text-blue-600 underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Detail
+                            </a>
+                          ) : null}
+                        </div>
+                      </HoverCard.Dropdown>
+                    </HoverCard>
+                  </Group>
+                );
+              })}
+          </div>
           {enddate > -1 && filter === AllFilter && (
-            <div ref={loaderRef}>
-              {loading ? "Loading..." : "Scroll to load more"}
+            <div
+              ref={loaderRef}
+              className="ml-2 text-xs text-center text-gray-400 mt-2"
+            >
+              {loading ? "Loading..." : ""}
             </div>
           )}
         </div>

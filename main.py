@@ -129,31 +129,36 @@ def get_all_reviews():
 os.makedirs("data/reviews", exist_ok=True)
 os.makedirs("data/output", exist_ok=True)
 
-game_detail = get_game_detail(appid)
-game_info['supported_languages'] = game_detail.get('languages', [])
-game_info['info'] = game_detail.get('info', [])
-print(f"Supported languages: {game_info['supported_languages']}")
-print(f"Game infomation: {game_info['info']}")
-country_reviews = group_reviews_by_country(reviews_path)
+def main():
+    game_detail = get_game_detail(appid)
+    game_info['supported_languages'] = game_detail.get('languages', [])
+    game_info['info'] = game_detail.get('info', [])
+    print(f"Supported languages: {game_info['supported_languages']}")
+    print(f"Game infomation: {game_info['info']}")
+    country_reviews = group_reviews_by_country(reviews_path)
 
-for country, reviews in country_reviews.items():
-    def normalize(lang):
-        return lang.replace('-', '').replace(' ', '').lower()
-    mapped_country = language_constants.language_mapping.get(country, country)
-    country_norm = normalize(mapped_country)
-    supported_norms = [normalize(l) for l in game_info['supported_languages']]
-    mark = '✅' if country_norm in supported_norms else '❌'
-    print(f"Language: {country} {mark}, Review Count: {len(reviews)}")
+    for country, reviews in country_reviews.items():
+        def normalize(lang):
+            return lang.replace('-', '').replace(' ', '').lower()
+        mapped_country = language_constants.language_mapping.get(country, country)
+        country_norm = normalize(mapped_country)
+        supported_norms = [normalize(l) for l in game_info['supported_languages']]
+        mark = '✅' if country_norm in supported_norms else '❌'
+        print(f"Language: {country} {mark}, Review Count: {len(reviews)}")
 
-get_all_reviews()
+    get_all_reviews()
 
-buckets = playtime_analysis.group_reviews_by_playtime(reviews_path)
-for k, v in buckets.items():
-    print(f"{k}: {len(v)} reviews")
+    buckets = playtime_analysis.group_reviews_by_playtime(reviews_path)
+    for k, v in buckets.items():
+        print(f"{k}: {len(v)} reviews")
 
-rates = review_rate.rate_by_language(reviews_path)
-for lang, stat in rates.items():
-    print(f"{lang}: 👍+{stat['positive']} 👎 -{stat['negative']} (total {stat['total']}) | rate: {stat['positive_rate']:.2%}")
+    rates = review_rate.rate_by_language(reviews_path)
+    for lang, stat in rates.items():
+        print(f"{lang}: 👍+{stat['positive']} 👎 -{stat['negative']} (total {stat['total']}) | rate: {stat['positive_rate']:.2%}")
 
-csv_path = f"data/output/reviews_{appid}.csv"
-export_utils.export_reviews_to_csv(reviews_path, csv_path)
+    csv_path = f"data/output/reviews_{appid}.csv"
+    export_utils.export_reviews_to_csv(reviews_path, csv_path)
+
+
+if __name__ == '__main__':
+    main()

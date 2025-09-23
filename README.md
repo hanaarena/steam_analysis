@@ -4,7 +4,7 @@ Steam game's reviews analyzer
 
 # Usage
 
-## Setup
+## Server
 
 ```bash
 python -m venv venv
@@ -14,12 +14,18 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Local Development
+### Local script development
 
 modify the **appid** you want to fetch in `main.py`
 
 ```bash
 python main.py
+```
+
+### Local server development
+
+```bash
+python server.py
 ```
 
 ## Client
@@ -36,6 +42,11 @@ pnpm dev
 # or
 npm run dev
 ```
+
+# API list
+
+- Get game detail: /api/game/{APP_ID}
+- Proxy request: /proxy?url={encodeURIComponent}
 
 # Steam related resouces
 

@@ -98,7 +98,7 @@ def get_first_reviews_stat(appid, cursor='*'):
     response = requests.get(api)
     data = response.json()
     game_info['reviews_summary'] = data.get('query_summary', {})
-    return data.get('cursor', '*')
+    return data
 
 def fetch_all_reviews_stat(appid, cursor='*', max_pages=50):
     """

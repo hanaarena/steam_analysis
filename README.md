@@ -25,7 +25,7 @@ python main.py
 ### Local server development
 
 ```bash
-python server.py
+python app.py
 ```
 
 ## Client
@@ -46,6 +46,7 @@ npm run dev
 # API list
 
 - Get game detail: /api/game/{APP_ID}
+- Get game reviews summary: /api/game/reviews/summary/{APP_ID}
 - Proxy request: /proxy?url={encodeURIComponent}
 
 # Steam related resouces

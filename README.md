@@ -47,6 +47,7 @@ npm run dev
 
 - Get game detail: /api/game/{APP_ID}
 - Get game reviews summary: /api/game/reviews/summary/{APP_ID}
+- Get game review list: /api/game/reviews/{APP_ID}
 - Proxy request: /proxy?url={encodeURIComponent}
 
 # Steam related resouces

@@ -97,8 +97,9 @@ def get_first_reviews_stat(appid, cursor='*'):
     api = f"https://store.steampowered.com/appreviews/{appid}?json=1&language=all&filter=recent&review_type=all&num_per_page=100&cursor={cursor}&day_range=null&purchase_type=all&filter_offtopic_activity=null&l=english"
     response = requests.get(api)
     data = response.json()
-    game_info['reviews_summary'] = data.get('query_summary', {})
-    return data
+    summary = data.get('query_summary', {})
+    game_info['reviews_summary'] = summary
+    return summary
 
 def fetch_all_reviews_stat(appid, cursor='*', max_pages=50):
     """
@@ -123,7 +124,8 @@ def fetch_all_reviews_stat(appid, cursor='*', max_pages=50):
         json.dump(flat_reviews, f, indent=2)
 
 def get_all_reviews():
-    cursor = get_first_reviews_stat(appid)
+    summary = get_first_reviews_stat(appid)
+    cursor = summary.get('cursor', '*')
     fetch_all_reviews_stat(appid, cursor)
 
 os.makedirs("data/reviews", exist_ok=True)

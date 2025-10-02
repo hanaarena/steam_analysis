@@ -17,7 +17,9 @@ def game_review_summary(appid):
     Fetch review summary. include reviews amount and stat
     """
     try:
-        summary = get_first_reviews_stat(appid)
+        language = request.args.get('l', 'english')
+        cursor = request.args.get('cursor', '*')
+        summary = get_first_reviews_stat(appid, cursor, language)
     except Exception as e:
         return abort(500, description=str(e))
     return jsonify(summary)

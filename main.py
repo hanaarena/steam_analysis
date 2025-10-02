@@ -59,11 +59,11 @@ def group_reviews_by_country(reviews_path):
         country_reviews[lang].append(review)
     return country_reviews
 
-def get_game_detail(appid):
+def get_game_detail(appid, language='english'):
     """
     Fetch supported languages list
     """
-    api = f"https://store.steampowered.com/api/appdetails?appids={appid}&l=english"
+    api = f"https://store.steampowered.com/api/appdetails?appids={appid}&l={language}"
     response = requests.get(api)
     data = response.json()
     app_data = data.get(str(appid), {}).get('data', {})
@@ -89,12 +89,12 @@ def get_game_detail(appid):
 # reviews_json = fetch_reviews(appid, max_reviews=200)
 # print(f"Fetched {len(reviews_json)} reviews")
 
-def get_first_reviews_stat(appid, cursor='*'):
+def get_first_reviews_stat(appid, cursor='*', language='english'):
     """
     Get all reviews summary data
     """
     print(f"Fetching reviews summary for appid {appid} with cursor {cursor}")
-    api = f"https://store.steampowered.com/appreviews/{appid}?json=1&language=all&filter=recent&review_type=all&num_per_page=100&cursor={cursor}&day_range=null&purchase_type=all&filter_offtopic_activity=null&l=english"
+    api = f"https://store.steampowered.com/appreviews/{appid}?json=1&language=all&filter=recent&review_type=all&num_per_page=100&cursor={cursor}&day_range=null&purchase_type=all&filter_offtopic_activity=null&l={language}"
     response = requests.get(api)
     data = response.json()
     summary = data.get('query_summary', {})

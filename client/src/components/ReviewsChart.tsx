@@ -1,5 +1,7 @@
 import { Steam_Review_Data } from "@/utils/const";
 import { exportCsv } from "@/utils/fs";
+import { get } from "@lanz/utils";
+import { useCallback, useEffect, useState } from "react";
 
 const COLORS: Record<RangeKey, string> = {
   steamkey_positive: "bg-green-800",
@@ -7,6 +9,9 @@ const COLORS: Record<RangeKey, string> = {
   steamkey_negative: "bg-red-800",
   purchased_negative: "bg-red-400",
 };
+
+// review fetch loop times for each languages
+const LoopCount = 2;
 
 function sumValues(values: Record<RangeKey, number>) {
   return Object.values(values).reduce((s, v) => s + v, 0);
@@ -20,6 +25,54 @@ export default function ReviewsChart({
   data?: RangeData[];
 }) {
   const maxTotal = Math.max(...data.map((d) => sumValues(d.values)));
+  const [summary, setSummary] = useState<IReviewSummary>(
+    {} as unknown as IReviewSummary
+  );
+  const [list, setList] = useState<IReviewsList["reviews"]>([]);
+  // TODO: language mapping for reviews data
+  const [cursor, setCursor] = useState("*");
+
+  const getReviews = useCallback(async () => {
+    let localCursor = cursor;
+
+    for (let i = 0; i < LoopCount; i++) {
+      console.warn("kekek localCursor", localCursor);
+      try {
+        const res = await get<IReviewsList>(
+          `/api/game/reviews/${id}?cursor=${encodeURIComponent(localCursor)}`
+        );
+
+        if (res && Array.isArray(res.reviews) && res.reviews.length > 0) {
+          setList((prev) => [...prev, ...res.reviews]);
+        }
+
+        // if server returned a new cursor, use it for the next iteration
+        if (res && res.cursor && res.reviews.length) {
+          localCursor = res.cursor;
+          setCursor(res.cursor);
+        } else {
+          break;
+        }
+      } catch (err) {
+        console.error("Failed to fetch reviews:", err);
+        break;
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  useEffect(() => {
+    function getReviewSummary() {
+      get<IReviewSummary>(`/api/game/reviews/summary/${id}`).then((res) => {
+        setSummary(res);
+      });
+    }
+
+    getReviewSummary();
+    setCursor("*");
+    setList([]);
+    getReviews();
+  }, [id, getReviews]);
 
   const downloadCsv = () => {
     const csv = exportCsv(["hours", ...Object.keys(COLORS)], data);
@@ -84,7 +137,7 @@ export default function ReviewsChart({
             </div>
 
             <div className="mt-4 text-xs text-gray-700">
-              Load Progress: 17,363/307,029
+              Load Progress: {list.length}/{summary.total_reviews}
             </div>
 
             <div className="mt-4 flex items-center gap-4">
@@ -94,6 +147,15 @@ export default function ReviewsChart({
               >
                 Download CSV
                 <div className="text-xs text-gray-500">All Language</div>
+              </button>
+              <button
+                onClick={getReviews}
+                className="px-4 py-2 border rounded bg-white text-sm shadow-sm hover:bg-gray-50 cursor-pointer"
+              >
+                Load Reviews
+                <div className="text-xs text-gray-500">
+                  Fetch next {LoopCount} pages
+                </div>
               </button>
             </div>
           </div>

@@ -251,3 +251,27 @@ interface SteamGermany {
   use_age_gate: string;
   descriptors: string;
 }
+
+interface IReviewSummary {
+  num_reviews: number;
+  review_score: number;
+  review_score_desc: string;
+  total_negative: number;
+  total_positive: number;
+  total_reviews: number;
+}
+
+interface IReviewsList {
+  cursor: string;
+  reviews: {
+    author: {
+      playtime_at_review: number;
+      playtime_forever: number;
+    };
+    language: string;
+    review: string;
+    steam_purchase: boolean;
+    voted_up: boolean;
+    timestamp_updated: number;
+  }[];
+}

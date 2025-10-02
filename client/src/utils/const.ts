@@ -9,7 +9,7 @@ export const PlayHourLabels = {
   Hour20To50: "20-50 hours",
   Hour50To100: "50-100 hours",
   HourMore100: "100+ hours",
-}
+};
 
 // Sample data
 export const Steam_Review_Data: RangeData[] = [
@@ -106,10 +106,12 @@ export const Steam_Review_Data: RangeData[] = [
 ];
 
 export const Gradients = [
-    "from-indigo-500 to-blue-400",
-    "from-pink-500 to-orange-400",
-    "from-green-400 to-teal-500",
-    "from-purple-500 to-pink-400",
-    "from-yellow-400 to-orange-300",
-    "from-sky-500 to-indigo-400",
-  ];
+  "from-indigo-500 to-blue-400",
+  "from-pink-500 to-orange-400",
+  "from-green-400 to-teal-500",
+  "from-purple-500 to-pink-400",
+  "from-yellow-400 to-orange-300",
+  "from-sky-500 to-indigo-400",
+];
+
+export const SupportLanguages = ["english", "japanese", "schinese"];

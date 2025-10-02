@@ -17,7 +17,6 @@ type UpdateItem = {
   tags?: string[];
 };
 
-const apiEndpoint = import.meta.env.VITE_STEAM_API;
 const PageSize = 20;
 const now = () => Math.floor(Date.now() / 1000);
 const AllFilter = "All";
@@ -53,7 +52,7 @@ export default function UpdateNews({ id }: { id: number | string }) {
       );
       const res = await get<{
         appnews: { newsitems: UpdateItem[]; count: number };
-      }>(`${apiEndpoint}/proxy?url=${target}`);
+      }>(`/proxy?url=${target}`);
 
       if (res.appnews?.newsitems?.length) {
         // sort newest -> oldest
@@ -138,7 +137,7 @@ export default function UpdateNews({ id }: { id: number | string }) {
                           <h3 className="font-semibold text-gray-800 text-sm">
                             {item.title}
                           </h3>
-                          <time className="text-xs text-gray-500">
+                          <time className="text-xs text-gray-500 text-right">
                             {new Date(item.date * 1000).toLocaleString()}
                           </time>
                         </div>

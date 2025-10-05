@@ -1,34 +1,59 @@
-import { Steam_Review_Data } from "@/utils/const";
+import { PlaytimeLabels, PlaytimeNumber, RangeKeyLabel } from "@/utils/const";
 import { exportCsv } from "@/utils/fs";
 import { get } from "@lanz/utils";
 import { useCallback, useEffect, useState } from "react";
 
-const COLORS: Record<RangeKey, string> = {
-  steamkey_positive: "bg-green-800",
-  purchased_positive: "bg-green-500",
-  steamkey_negative: "bg-red-800",
-  purchased_negative: "bg-red-400",
-};
-
-// review fetch loop times for each languages
-const LoopCount = 2;
-
-function sumValues(values: Record<RangeKey, number>) {
-  return Object.values(values).reduce((s, v) => s + v, 0);
+type RangeLabelValuesKey = (typeof RangeKeyLabel)[keyof typeof RangeKeyLabel];
+type RangeLabelValuesValue = Record<RangeLabelValuesKey, number>;
+interface RangeData {
+  label: (typeof PlaytimeLabels)[keyof typeof PlaytimeLabels];
+  data: RangeLabelValuesValue;
 }
 
-export default function ReviewsChart({
-  id,
-  data = Steam_Review_Data,
-}: {
-  id: number | string;
-  data?: RangeData[];
-}) {
-  const maxTotal = Math.max(...data.map((d) => sumValues(d.values)));
+// range data type's segment colors
+const COLORS: Record<RangeLabelValuesKey, string> = {
+  [RangeKeyLabel.STEAMKEY_POSITIVE]: "bg-green-800",
+  [RangeKeyLabel.PURCHASED_POSITIVE]: "bg-green-500",
+  [RangeKeyLabel.STEAMKEY_NEGATIVE]: "bg-red-800",
+  [RangeKeyLabel.PURCHASED_NEGATIVE]: "bg-red-400",
+};
+// review fetch loop times for each languages
+const LoopCount = 2;
+const initRangeData = Object.keys(PlaytimeLabels).map((p) => ({
+  label: p as (typeof PlaytimeLabels)[keyof typeof PlaytimeLabels],
+  data: Object.values(RangeKeyLabel).reduce<RangeLabelValuesValue>(
+    (acc, key) => {
+      acc[key as RangeLabelValuesKey] = 0;
+      return acc;
+    },
+    {} as RangeLabelValuesValue
+  ),
+}));
+
+// function sumValues(values: Record<RangeKey, number>) {
+//   return Object.values(values).reduce((s, v) => s + v, 0);
+// }
+
+const splitPurchasedTypeByPlaytime = (item: IReviewsListItem) => {
+  const { author } = item || {};
+  const { playtime_forever } = author || {};
+  switch (true) {
+    case playtime_forever < PlaytimeNumber[PlaytimeLabels.Less10]:
+      break;
+
+    default:
+      break;
+  }
+  return 0;
+};
+
+export default function ReviewsChart({ id }: { id: number | string }) {
+  // const maxTotal = Math.max(...data.map((d) => sumValues(d.values)));
   const [summary, setSummary] = useState<IReviewSummary>(
     {} as unknown as IReviewSummary
   );
   const [list, setList] = useState<IReviewsList["reviews"]>([]);
+  const [rangeData, setRangeData] = useState<RangeData[]>(initRangeData);
   // TODO: language mapping for reviews data
   const [cursor, setCursor] = useState("*");
 
@@ -36,7 +61,6 @@ export default function ReviewsChart({
     let localCursor = cursor;
 
     for (let i = 0; i < LoopCount; i++) {
-      console.warn("kekek localCursor", localCursor);
       try {
         const res = await get<IReviewsList>(
           `/api/game/reviews/${id}?cursor=${encodeURIComponent(localCursor)}`
@@ -75,7 +99,7 @@ export default function ReviewsChart({
   }, [id, getReviews]);
 
   const downloadCsv = () => {
-    const csv = exportCsv(["hours", ...Object.keys(COLORS)], data);
+    const csv = exportCsv(["hours", ...Object.keys(COLORS)], rangeData);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -99,7 +123,7 @@ export default function ReviewsChart({
             {Object.keys(COLORS).map((c) => (
               <LegendItem
                 key={`legend_${c}`}
-                color={COLORS[c as RangeKey]}
+                color={COLORS[c as RangeLabelValuesKey]}
                 label={
                   c.replace("_", " ").charAt(0).toUpperCase() +
                   c.replace("_", " ").slice(1)
@@ -111,7 +135,7 @@ export default function ReviewsChart({
           <div className="bg-gray-50 p-4 rounded shadow">
             <h2 className="font-semibold mb-3">All Reviewers</h2>
             <div className="space-y-3">
-              {data.map((row) => {
+              {rangeData.map((row) => {
                 return (
                   <div key={row.label} className="flex items-center gap-4">
                     <div className="w-36 text-sm text-right pr-4 text-gray-700">
@@ -123,8 +147,8 @@ export default function ReviewsChart({
                         {Object.entries(COLORS).map(([key, color]) => (
                           <StackSegment
                             key={`segment_${key}`}
-                            value={row.values[key as RangeKey]}
-                            total={maxTotal}
+                            value={row.data[key as RangeLabelValuesKey]}
+                            total={list.length}
                             color={color}
                             showCount
                           />
@@ -178,7 +202,7 @@ function StackSegment({
   value,
   total,
   color,
-  showCount,
+  showCount = false,
 }: {
   value: number;
   total: number;

@@ -1,14 +1,3 @@
-type RangeKey =
-  | "steamkey_positive"
-  | "purchased_positive"
-  | "steamkey_negative"
-  | "purchased_negative";
-
-type RangeData = {
-  label: string;
-  values: Record<RangeKey, number>;
-};
-
 interface ISaleStat {
   steamId: string;
   headerImageUrl: string;
@@ -261,17 +250,19 @@ interface IReviewSummary {
   total_reviews: number;
 }
 
+interface IReviewsListItem {
+  author: {
+    playtime_at_review: number;
+    playtime_forever: number;
+  };
+  language: string;
+  review: string;
+  steam_purchase: boolean;
+  voted_up: boolean;
+  timestamp_updated: number;
+}
+
 interface IReviewsList {
   cursor: string;
-  reviews: {
-    author: {
-      playtime_at_review: number;
-      playtime_forever: number;
-    };
-    language: string;
-    review: string;
-    steam_purchase: boolean;
-    voted_up: boolean;
-    timestamp_updated: number;
-  }[];
+  reviews: IReviewsListItem[];
 }

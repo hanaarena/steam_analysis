@@ -9,7 +9,7 @@ export const PlaytimeLabels = {
   Hour20To50: "20-50 hours",
   Hour50To100: "50-100 hours",
   HourMore100: "100+ hours",
-};
+} as const;
 
 export const PlaytimeNumber = {
   [PlaytimeLabels.Less10]: 10,
@@ -20,7 +20,8 @@ export const PlaytimeNumber = {
   [PlaytimeLabels.Hour5To10]: 600,
   [PlaytimeLabels.Hour10To20]: 1200,
   [PlaytimeLabels.Hour20To50]: 3000,
-  [PlaytimeLabels.Hour50To100]: 6000
+  [PlaytimeLabels.Hour50To100]: 6000,
+  [PlaytimeLabels.HourMore100]: 6000
 }
 
 export const RangeKeyLabel = {
@@ -28,7 +29,7 @@ export const RangeKeyLabel = {
   PURCHASED_POSITIVE: "purchased_positive",
   STEAMKEY_NEGATIVE: "steamkey_negative",
   PURCHASED_NEGATIVE: "purchased_negative"
-}
+} as const;
 
 export const Gradients = [
   "from-indigo-500 to-blue-400",

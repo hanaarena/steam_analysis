@@ -4,11 +4,14 @@ import { get } from "@lanz/utils";
 import { useCallback, useEffect, useState } from "react";
 
 type RangeLabelValuesKey = (typeof RangeKeyLabel)[keyof typeof RangeKeyLabel];
-type RangeLabelValuesValue = Record<RangeLabelValuesKey, number>;
-interface RangeData {
-  label: (typeof PlaytimeLabels)[keyof typeof PlaytimeLabels];
-  data: RangeLabelValuesValue;
-}
+// union of strings like "< 10 minutes" | "10-30 minutes" | ...
+type PlaytimeLabel = (typeof PlaytimeLabels)[keyof typeof PlaytimeLabels];
+// "steamkey_positive" | "purchased_positive" | ...
+type RangeKey = (typeof RangeKeyLabel)[keyof typeof RangeKeyLabel];
+// inner row: all RangeKey entries -> number
+type RangeRow = { [K in RangeKey]: number };
+// top-level data: for every PlaytimeLabel, store a RangeRow
+type RangeData = { [P in PlaytimeLabel]: RangeRow };
 
 // range data type's segment colors
 const COLORS: Record<RangeLabelValuesKey, string> = {
@@ -19,46 +22,84 @@ const COLORS: Record<RangeLabelValuesKey, string> = {
 };
 // review fetch loop times for each languages
 const LoopCount = 2;
-const initRangeData = Object.keys(PlaytimeLabels).map((p) => ({
-  label: p as (typeof PlaytimeLabels)[keyof typeof PlaytimeLabels],
-  data: Object.values(RangeKeyLabel).reduce<RangeLabelValuesValue>(
-    (acc, key) => {
-      acc[key as RangeLabelValuesKey] = 0;
-      return acc;
-    },
-    {} as RangeLabelValuesValue
-  ),
+
+// initialize range data with all playtime labels and segments
+const initRangeData: RangeData = Object.fromEntries(
+  Object.values(PlaytimeLabels).map((label) => [
+    label,
+    Object.fromEntries(
+      Object.values(RangeKeyLabel).map((k) => [k, 0])
+    ) as Record<RangeLabelValuesKey, number>,
+  ])
+) as unknown as RangeData;
+// build ordered buckets: { label, limit } where limit may be undefined => Infinity
+const buckets = Object.values(PlaytimeLabels).map((label) => ({
+  label,
+  limit: PlaytimeNumber[label as PlaytimeLabel] ?? Infinity,
 }));
 
-// function sumValues(values: Record<RangeKey, number>) {
-//   return Object.values(values).reduce((s, v) => s + v, 0);
-// }
-
-const splitPurchasedTypeByPlaytime = (item: IReviewsListItem) => {
-  const { author } = item || {};
-  const { playtime_forever } = author || {};
-  switch (true) {
-    case playtime_forever < PlaytimeNumber[PlaytimeLabels.Less10]:
-      break;
-
-    default:
-      break;
-  }
-  return 0;
-};
-
 export default function ReviewsChart({ id }: { id: number | string }) {
-  // const maxTotal = Math.max(...data.map((d) => sumValues(d.values)));
   const [summary, setSummary] = useState<IReviewSummary>(
     {} as unknown as IReviewSummary
   );
   const [list, setList] = useState<IReviewsList["reviews"]>([]);
-  const [rangeData, setRangeData] = useState<RangeData[]>(initRangeData);
+  const [rangeData, setRangeData] = useState<RangeData>(initRangeData);
   // TODO: language mapping for reviews data
   const [cursor, setCursor] = useState("*");
 
+  // loop reviews list to count range data
+  const splitPurchasedTypeByPlaytime = (
+    list: IReviewsListItem[],
+    rawData: RangeData
+  ) => {
+    // deep-clone rangeData
+    const localRangeData = Object.fromEntries(
+      Object.entries(rawData || initRangeData).map(([k, v]) => [k, { ...v }])
+    ) as RangeData;
+
+    // find bucket label for a given playtime
+    function bucketForPlaytime(playtime: number | undefined) {
+      if (playtime == null || Number.isNaN(playtime)) {
+        return buckets[0].label;
+      }
+      for (const b of buckets) {
+        if (playtime < b.limit) return b.label;
+      }
+      // if none matched, return the last label
+      return buckets[buckets.length - 1].label;
+    }
+
+    // compute the range key to increment based on steam_purchase and voted_up
+    function rangeKeyFor(steamPurchase?: boolean, votedUp?: boolean) {
+      if (steamPurchase) {
+        return votedUp
+          ? RangeKeyLabel.PURCHASED_POSITIVE
+          : RangeKeyLabel.PURCHASED_NEGATIVE;
+      }
+      return votedUp
+        ? RangeKeyLabel.STEAMKEY_POSITIVE
+        : RangeKeyLabel.STEAMKEY_NEGATIVE;
+    }
+
+    for (const item of list) {
+      const { author, steam_purchase, voted_up } = item || {};
+      const playtime = author?.playtime_forever;
+      const label = bucketForPlaytime(playtime);
+      const key = rangeKeyFor(steam_purchase, voted_up) as RangeLabelValuesKey;
+
+      if (!localRangeData[label] || !(key in localRangeData[label])) {
+        continue;
+      }
+
+      localRangeData[label][key] = (localRangeData[label][key] ?? 0) + 1;
+    }
+
+    return localRangeData;
+  };
+
   const getReviews = useCallback(async () => {
     let localCursor = cursor;
+    let resultRangeData = null as unknown as RangeData;
 
     for (let i = 0; i < LoopCount; i++) {
       try {
@@ -72,6 +113,11 @@ export default function ReviewsChart({ id }: { id: number | string }) {
 
         // if server returned a new cursor, use it for the next iteration
         if (res && res.cursor && res.reviews.length) {
+          // update range data
+          resultRangeData = splitPurchasedTypeByPlaytime(
+            res.reviews,
+            resultRangeData
+          );
           localCursor = res.cursor;
           setCursor(res.cursor);
         } else {
@@ -82,6 +128,8 @@ export default function ReviewsChart({ id }: { id: number | string }) {
         break;
       }
     }
+
+    setRangeData(resultRangeData);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -99,7 +147,11 @@ export default function ReviewsChart({ id }: { id: number | string }) {
   }, [id, getReviews]);
 
   const downloadCsv = () => {
-    const csv = exportCsv(["hours", ...Object.keys(COLORS)], rangeData);
+    const dataArray = Object.entries(rangeData).map(([label, values]) => ({
+      label,
+      values,
+    }));
+    const csv = exportCsv(["hours", ...Object.keys(COLORS)], dataArray);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -135,29 +187,27 @@ export default function ReviewsChart({ id }: { id: number | string }) {
           <div className="bg-gray-50 p-4 rounded shadow">
             <h2 className="font-semibold mb-3">All Reviewers</h2>
             <div className="space-y-3">
-              {rangeData.map((row) => {
-                return (
-                  <div key={row.label} className="flex items-center gap-4">
-                    <div className="w-36 text-sm text-right pr-4 text-gray-700">
-                      {row.label}
-                    </div>
+              {Object.entries(rangeData).map(([label, data]) => (
+                <div key={label} className="flex items-center gap-4">
+                  <div className="w-36 text-sm text-right pr-4 text-gray-700">
+                    {label}
+                  </div>
 
-                    <div className="flex-1 bg-gray-300 rounded h-10 relative overflow-hidden">
-                      <div className="absolute inset-y-0 left-0 flex">
-                        {Object.entries(COLORS).map(([key, color]) => (
-                          <StackSegment
-                            key={`segment_${key}`}
-                            value={row.data[key as RangeLabelValuesKey]}
-                            total={list.length}
-                            color={color}
-                            showCount
-                          />
-                        ))}
-                      </div>
+                  <div className="flex-1 bg-gray-300 rounded h-10 relative overflow-hidden">
+                    <div className="absolute inset-y-0 left-0 flex">
+                      {Object.entries(COLORS).map(([key, color]) => (
+                        <StackSegment
+                          key={`segment_${key}_${label}`}
+                          value={data[key as RangeLabelValuesKey] ?? 0}
+                          total={list.length}
+                          color={color}
+                          showCount
+                        />
+                      ))}
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
 
             <div className="mt-4 text-xs text-gray-700">

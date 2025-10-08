@@ -27,10 +27,10 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/proxy/, ""),
         },
-        "/api": {
+        "/api/gamalytic": {
           target: "https://api.gamalytic.com",
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ""),
+          rewrite: (path) => path.replace(/^\/api\/gamalytic/, ""),
         },
         "/steam": {
           target: "https://store.steampowered.com/api",

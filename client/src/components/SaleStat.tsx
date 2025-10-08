@@ -2,15 +2,13 @@ import { useEffect, useState } from "react";
 import { get } from "@lanz/utils";
 import { parseNum } from "@/utils/num";
 
-const apiEndpoint = import.meta.env.VITE_API;
-
 export default function SaleStat({ id }: { id: number | string }) {
   const [stat, setStat] = useState<ISaleStat>({} as ISaleStat);
 
   useEffect(() => {
     const getStat = async () => {
       const data = await get<ISaleStat>(
-        `${apiEndpoint}/game/${id}?include_pre_release_history=true`
+        `/api/gamalytic/game/${id}?include_pre_release_history=true`
       );
       setStat(data);
     };

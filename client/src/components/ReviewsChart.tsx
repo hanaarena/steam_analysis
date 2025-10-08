@@ -46,12 +46,10 @@ export default function ReviewsChart({ id }: { id: number | string }) {
   const [rangeData, setRangeData] = useState<RangeData>(initRangeData);
   // TODO: language mapping for reviews data
   const [cursor, setCursor] = useState("*");
+  const [maxRangeCount, setMaxRangeCount] = useState(0);
 
-  // loop reviews list to count range data
-  const splitPurchasedTypeByPlaytime = (
-    list: IReviewsListItem[],
-    rawData: RangeData
-  ) => {
+  // loop reviews list to count range data & split by language
+  const parseReviewData = (list: IReviewsListItem[], rawData: RangeData) => {
     // deep-clone rangeData
     const localRangeData = Object.fromEntries(
       Object.entries(rawData || initRangeData).map(([k, v]) => [k, { ...v }])
@@ -99,7 +97,7 @@ export default function ReviewsChart({ id }: { id: number | string }) {
 
   const getReviews = useCallback(async () => {
     let localCursor = cursor;
-    let resultRangeData = null as unknown as RangeData;
+    let localRangeData = null as unknown as RangeData;
     const localReviews: IReviewsListItem[] = [];
 
     for (let i = 0; i < LoopCount; i++) {
@@ -115,10 +113,7 @@ export default function ReviewsChart({ id }: { id: number | string }) {
         // if server returned a new cursor, use it for the next iteration
         if (res && res.cursor && res.reviews.length) {
           // update range data
-          resultRangeData = splitPurchasedTypeByPlaytime(
-            res.reviews,
-            resultRangeData
-          );
+          localRangeData = parseReviewData(res.reviews, localRangeData);
           localCursor = res.cursor;
           setCursor(res.cursor);
         } else {
@@ -130,9 +125,18 @@ export default function ReviewsChart({ id }: { id: number | string }) {
       }
     }
 
-    console.warn("kekek localReviews", localReviews);
     setList(localReviews);
-    setRangeData(resultRangeData);
+    setRangeData(localRangeData);
+    // find max count inside rangeData
+    let localMaxCount = 0;
+    Object.values(localRangeData).map((o) => {
+      let t = 0;
+      Object.values(o).map((oo) => (t += oo));
+      localMaxCount = Math.max(localMaxCount, t);
+    });
+    console.warn("kekek localMaxCount", localMaxCount);
+    setMaxRangeCount(localMaxCount);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -202,7 +206,7 @@ export default function ReviewsChart({ id }: { id: number | string }) {
                         <StackSegment
                           key={`segment_${key}_${label}`}
                           value={data[key as RangeLabelValuesKey] ?? 0}
-                          total={list.length}
+                          total={maxRangeCount}
                           color={color}
                           showCount
                         />

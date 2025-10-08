@@ -25,6 +25,7 @@ python main.py
 ### Local server development
 
 ```bash
+# enter virtual environment
 python app.py
 ```
 

@@ -42,7 +42,7 @@ export default function ReviewsChart({ id }: { id: number | string }) {
   const [summary, setSummary] = useState<IReviewSummary>(
     {} as unknown as IReviewSummary
   );
-  const [list, setList] = useState<IReviewsList["reviews"]>([]);
+  const [list, setList] = useState<IReviewsListItem[]>([]);
   const [rangeData, setRangeData] = useState<RangeData>(initRangeData);
   // TODO: language mapping for reviews data
   const [cursor, setCursor] = useState("*");
@@ -100,6 +100,7 @@ export default function ReviewsChart({ id }: { id: number | string }) {
   const getReviews = useCallback(async () => {
     let localCursor = cursor;
     let resultRangeData = null as unknown as RangeData;
+    const localReviews: IReviewsListItem[] = [];
 
     for (let i = 0; i < LoopCount; i++) {
       try {
@@ -108,7 +109,7 @@ export default function ReviewsChart({ id }: { id: number | string }) {
         );
 
         if (res && Array.isArray(res.reviews) && res.reviews.length > 0) {
-          setList((prev) => [...prev, ...res.reviews]);
+          localReviews.push(...res.reviews);
         }
 
         // if server returned a new cursor, use it for the next iteration
@@ -129,6 +130,8 @@ export default function ReviewsChart({ id }: { id: number | string }) {
       }
     }
 
+    console.warn("kekek localReviews", localReviews);
+    setList(localReviews);
     setRangeData(resultRangeData);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -194,7 +197,7 @@ export default function ReviewsChart({ id }: { id: number | string }) {
                   </div>
 
                   <div className="flex-1 bg-gray-300 rounded h-10 relative overflow-hidden">
-                    <div className="absolute inset-y-0 left-0 flex">
+                    <div className="absolute inset-y-0 left-0 flex w-full">
                       {Object.entries(COLORS).map(([key, color]) => (
                         <StackSegment
                           key={`segment_${key}_${label}`}

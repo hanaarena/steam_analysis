@@ -201,16 +201,38 @@ export default function ReviewsChart({ id }: { id: number | string }) {
                   </div>
 
                   <div className="flex-1 bg-gray-300 rounded h-10 relative overflow-hidden">
-                    <div className="absolute inset-y-0 left-0 flex w-full">
-                      {Object.entries(COLORS).map(([key, color]) => (
-                        <StackSegment
-                          key={`segment_${key}_${label}`}
-                          value={data[key as RangeLabelValuesKey] ?? 0}
-                          total={maxRangeCount}
-                          color={color}
-                          showCount
-                        />
-                      ))}
+                    <div className="absolute inset-0 left-0 flex flex-col w-full">
+                      {/* Top row: positive (green) segments */}
+                      <div className="flex h-1/2 items-center">
+                        {[
+                          RangeKeyLabel.STEAMKEY_POSITIVE,
+                          RangeKeyLabel.PURCHASED_POSITIVE,
+                        ].map((k) => (
+                          <StackSegment
+                            key={`segment_${k}_${label}`}
+                            value={data[k as RangeLabelValuesKey] ?? 0}
+                            total={maxRangeCount}
+                            color={COLORS[k as RangeLabelValuesKey]}
+                            showCount
+                          />
+                        ))}
+                      </div>
+
+                      {/* Bottom row: negative (red) segments */}
+                      <div className="flex h-1/2 items-center">
+                        {[
+                          RangeKeyLabel.STEAMKEY_NEGATIVE,
+                          RangeKeyLabel.PURCHASED_NEGATIVE,
+                        ].map((k) => (
+                          <StackSegment
+                            key={`segment_${k}_${label}`}
+                            value={data[k as RangeLabelValuesKey] ?? 0}
+                            total={maxRangeCount}
+                            color={COLORS[k as RangeLabelValuesKey]}
+                            showCount
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>

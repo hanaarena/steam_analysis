@@ -266,3 +266,13 @@ interface IReviewsList {
   cursor: string;
   reviews: IReviewsListItem[];
 }
+
+interface IReviewsLangItem {
+  language: string;
+  reviews: IReviewsListItem[];
+  positiveCount: number;
+  negativeCount: number;
+}
+
+// specifi language review list
+type LangReview = Record<string, IReviewsLangItem>;

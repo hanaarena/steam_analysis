@@ -2,6 +2,9 @@ import { PlaytimeLabels, PlaytimeNumber, RangeKeyLabel } from "@/utils/const";
 import { exportCsv } from "@/utils/fs";
 import { get } from "@lanz/utils";
 import { useCallback, useEffect, useState } from "react";
+import LegendItem from "./LengendItem";
+import StackSegment from "./StackSegment";
+import LanguageScoreTable from "./LanguageScoreTable";
 
 type RangeLabelValuesKey = (typeof RangeKeyLabel)[keyof typeof RangeKeyLabel];
 // union of strings like "< 10 minutes" | "10-30 minutes" | ...
@@ -37,6 +40,29 @@ const buckets = Object.values(PlaytimeLabels).map((label) => ({
   label,
   limit: PlaytimeNumber[label as PlaytimeLabel] ?? Infinity,
 }));
+// find bucket label for a given playtime
+function bucketForPlaytime(playtime: number | undefined) {
+  if (playtime == null || Number.isNaN(playtime)) {
+    return buckets[0].label;
+  }
+  for (const b of buckets) {
+    if (playtime < b.limit) return b.label;
+  }
+  // if none matched, return the last label
+  return buckets[buckets.length - 1].label;
+}
+
+// compute the range key to increment based on steam_purchase and voted_up
+function rangeKeyFor(steamPurchase?: boolean, votedUp?: boolean) {
+  if (steamPurchase) {
+    return votedUp
+      ? RangeKeyLabel.PURCHASED_POSITIVE
+      : RangeKeyLabel.PURCHASED_NEGATIVE;
+  }
+  return votedUp
+    ? RangeKeyLabel.STEAMKEY_POSITIVE
+    : RangeKeyLabel.STEAMKEY_NEGATIVE;
+}
 
 export default function ReviewsChart({ id }: { id: number | string }) {
   const [summary, setSummary] = useState<IReviewSummary>(
@@ -44,43 +70,40 @@ export default function ReviewsChart({ id }: { id: number | string }) {
   );
   const [list, setList] = useState<IReviewsListItem[]>([]);
   const [rangeData, setRangeData] = useState<RangeData>(initRangeData);
-  // TODO: language mapping for reviews data
   const [cursor, setCursor] = useState("*");
   const [maxRangeCount, setMaxRangeCount] = useState(0);
+  const [langData, setLangData] = useState<LangReview>({});
 
   // loop reviews list to count range data & split by language
-  const parseReviewData = (list: IReviewsListItem[], rawData: RangeData) => {
+  const parseReviewData = (
+    list: IReviewsListItem[],
+    rawData: RangeData,
+    rawLangData: LangReview
+  ) => {
     // deep-clone rangeData
     const localRangeData = Object.fromEntries(
       Object.entries(rawData || initRangeData).map(([k, v]) => [k, { ...v }])
     ) as RangeData;
-
-    // find bucket label for a given playtime
-    function bucketForPlaytime(playtime: number | undefined) {
-      if (playtime == null || Number.isNaN(playtime)) {
-        return buckets[0].label;
-      }
-      for (const b of buckets) {
-        if (playtime < b.limit) return b.label;
-      }
-      // if none matched, return the last label
-      return buckets[buckets.length - 1].label;
-    }
-
-    // compute the range key to increment based on steam_purchase and voted_up
-    function rangeKeyFor(steamPurchase?: boolean, votedUp?: boolean) {
-      if (steamPurchase) {
-        return votedUp
-          ? RangeKeyLabel.PURCHASED_POSITIVE
-          : RangeKeyLabel.PURCHASED_NEGATIVE;
-      }
-      return votedUp
-        ? RangeKeyLabel.STEAMKEY_POSITIVE
-        : RangeKeyLabel.STEAMKEY_NEGATIVE;
-    }
+    const localLangData: LangReview = rawLangData || {};
 
     for (const item of list) {
-      const { author, steam_purchase, voted_up } = item || {};
+      const { author, steam_purchase, voted_up, language } = item || {};
+
+      // split by language
+      if (!localLangData[language]) {
+        localLangData[language] = {
+          language: language,
+          reviews: [],
+          positiveCount: 0,
+          negativeCount: 0,
+        };
+      } else {
+        localLangData[language].reviews.push(item);
+        if (voted_up) localLangData[language].positiveCount += 1;
+        else localLangData[language].negativeCount += 1;
+      }
+
+      // parse RangeData
       const playtime = author?.playtime_forever;
       const label = bucketForPlaytime(playtime);
       const key = rangeKeyFor(steam_purchase, voted_up) as RangeLabelValuesKey;
@@ -92,12 +115,13 @@ export default function ReviewsChart({ id }: { id: number | string }) {
       localRangeData[label][key] = (localRangeData[label][key] ?? 0) + 1;
     }
 
-    return localRangeData;
+    return { localRangeData, localLangData };
   };
 
   const getReviews = useCallback(async () => {
     let localCursor = cursor;
     let localRangeData = null as unknown as RangeData;
+    let localLangData = {} as LangReview;
     const localReviews: IReviewsListItem[] = [];
 
     for (let i = 0; i < LoopCount; i++) {
@@ -113,7 +137,13 @@ export default function ReviewsChart({ id }: { id: number | string }) {
         // if server returned a new cursor, use it for the next iteration
         if (res && res.cursor && res.reviews.length) {
           // update range data
-          localRangeData = parseReviewData(res.reviews, localRangeData);
+          const parsed = parseReviewData(
+            res.reviews,
+            localRangeData,
+            localLangData
+          );
+          localRangeData = parsed.localRangeData;
+          localLangData = parsed.localLangData;
           localCursor = res.cursor;
           setCursor(res.cursor);
         } else {
@@ -127,6 +157,7 @@ export default function ReviewsChart({ id }: { id: number | string }) {
 
     setList(localReviews);
     setRangeData(localRangeData);
+    setLangData(localLangData);
     // find max count inside rangeData
     let localMaxCount = 0;
     Object.values(localRangeData).map((o) => {
@@ -176,7 +207,7 @@ export default function ReviewsChart({ id }: { id: number | string }) {
         </h1>
       </header>
 
-      <div className="flex items-start gap-6">
+      <div className="flex items-start gap-6 mb-4">
         <div className="flex-1">
           <div className="flex gap-4 items-center mb-6">
             {Object.keys(COLORS).map((c) => (
@@ -264,38 +295,8 @@ export default function ReviewsChart({ id }: { id: number | string }) {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-function LegendItem({ color, label }: { color: string; label: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <div className={`${color} w-6 h-6 rounded-sm border`}></div>
-      <div className="text-sm text-gray-700">{label}</div>
-    </div>
-  );
-}
-
-function StackSegment({
-  value,
-  total,
-  color,
-  showCount = false,
-}: {
-  value: number;
-  total: number;
-  color: string;
-  showCount?: boolean;
-}) {
-  const width = total > 0 ? (value / total) * 100 : 0;
-  if (value === 0) return <></>;
-  return (
-    <div
-      className={`h-full ${color} flex items-center justify-center text-white text-xs font-semibold`}
-      style={{ width: `${width}%` }}
-    >
-      {showCount && <span className="px-1">{value}</span>}
+      <LanguageScoreTable data={langData} />
     </div>
   );
 }

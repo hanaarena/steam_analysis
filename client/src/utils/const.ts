@@ -21,14 +21,14 @@ export const PlaytimeNumber = {
   [PlaytimeLabels.Hour10To20]: 1200,
   [PlaytimeLabels.Hour20To50]: 3000,
   [PlaytimeLabels.Hour50To100]: 6000,
-  [PlaytimeLabels.HourMore100]: 6000
-}
+  [PlaytimeLabels.HourMore100]: 6000,
+};
 
 export const RangeKeyLabel = {
   STEAMKEY_POSITIVE: "steamkey_positive",
   PURCHASED_POSITIVE: "purchased_positive",
   STEAMKEY_NEGATIVE: "steamkey_negative",
-  PURCHASED_NEGATIVE: "purchased_negative"
+  PURCHASED_NEGATIVE: "purchased_negative",
 } as const;
 
 export const Gradients = [
@@ -41,3 +41,13 @@ export const Gradients = [
 ];
 
 export const SupportLanguages = ["english", "japanese", "schinese"];
+
+export const ReviewScoreRating = {
+  S: "Overwhelmingly Positive", // ≥95% (and ≥500 reviews)
+  A: "Very Positive", // 80%−94% (and ≥50 reviews)
+  B: "Mostly Positive", // 70%−79%
+  C: "Mixed", // 40%−69%
+  D: "Mostly Negative", // 20%−39%
+  E: "Very Negative", // ≤19% (and ≥50 reviews)
+  F: "Overwhelmingly Negative" // ≤19% (and ≥500 reviews)
+};

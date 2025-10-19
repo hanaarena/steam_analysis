@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import "./App.css";
-import ReviewsChart from "./components/ReviewsChart";
+import ReviewsChart from "./components/ReviewChart";
 import SaleStat from "./components/SaleStat";
 import EmptyTip from "./components/EmptyTip";
 import { get } from "@lanz/utils";
